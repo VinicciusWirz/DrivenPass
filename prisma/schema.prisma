@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  email           String        @unique
+  password        String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  Credential      Credential[]
+  Note            Note[]
+  Card            Card[]
+  Wifi            Wifi[]
+  License         License[]
+
+  @@map("users")
+}
+
+model Credential {
+  id              Int           @id @default(autoincrement())
+  title           String
+  url             String
+  username        String
+  password        String
+  userId          Int
+  User            User          @relation(fields: [userId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([title, userId])
+  @@map("credentials")
+}
+
+model Note{
+  id              Int           @id @default(autoincrement())
+  title           String
+  text            String
+  userId          Int
+  User            User          @relation(fields: [userId], references: [id])
+
+  @@unique([title, userId])
+  @@map("notes")
+}
+
+model Card{
+  id              Int           @id @default(autoincrement())
+  title           String
+  number          String
+  cvv             Int
+  expiration      String
+  userId          Int
+  User            User          @relation(fields: [userId], references: [id])
+
+  @@unique([title, userId])
+  @@map("cards")
+}
+
+model Wifi{
+  id              Int           @id @default(autoincrement())
+  title           String
+  name            String
+  password        String
+  userId          Int
+  User            User          @relation(fields: [userId], references: [id])
+
+  @@unique([title, userId])
+  @@map("wifis")
+}
+
+model License{
+  id                  Int           @id @default(autoincrement())
+  softwareName        String
+  softwareVersion     String
+  licenseKey          String
+  userId              Int
+  User                User          @relation(fields: [userId], references: [id])
+
+  @@unique([softwareName, softwareVersion, licenseKey, userId])
+  @@map("licenses")
+}
