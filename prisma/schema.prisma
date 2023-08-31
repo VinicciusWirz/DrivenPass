@@ -55,13 +55,23 @@ model Card{
   id              Int           @id @default(autoincrement())
   title           String
   number          String
-  cvv             Int
+  name            String
+  cvv             String
   expiration      String
+  password        String
+  virtual         Boolean
+  type            CardType
   userId          Int
   User            User          @relation(fields: [userId], references: [id])
 
   @@unique([title, userId])
   @@map("cards")
+}
+
+enum CardType {
+  CREDIT
+  DEBIT
+  BOTH
 }
 
 model Wifi{

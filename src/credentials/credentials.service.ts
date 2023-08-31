@@ -11,7 +11,7 @@ import { CreateCredentialDto } from './dto/create-credential.dto';
 
 @Injectable()
 export class CredentialsService {
-  cryptr: Cryptr;
+  private cryptr: Cryptr;
 
   constructor(private readonly repository: CredentialsRepository) {
     const Cryptr = require('cryptr');
