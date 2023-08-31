@@ -34,14 +34,21 @@ export class NotesService {
     return note;
   }
 
-  update(id: number, body: UpdateNoteDto) {
-    return `This action updates a #${id} note`;
+  async update(id: number, body: UpdateNoteDto, user: User) {
+    const existingNote = await this.findOne(id, user);
+
+    if (body.title !== undefined && body.title !== existingNote.title) {
+      const { id: userId } = user;
+      await this.findWithTitle(body as CreateNoteDto, userId);
+    }
+
+    return await this.repository.update(id, body, user);
   }
 
   async remove(id: number, user: User) {
     await this.findOne(id, user);
     await this.repository.remove(id, user);
-    return `This action removes a #${id} note`;
+    return;
   }
 
   private async findWithTitle(body: CreateNoteDto, userId: number) {

@@ -4,13 +4,13 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -38,9 +38,13 @@ export class NotesController {
     return this.notesService.findOne(id, user);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNoteDto: UpdateNoteDto) {
-    return this.notesService.update(+id, updateNoteDto);
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateNoteDto,
+    @User() user: UserPrisma,
+  ) {
+    return this.notesService.update(id, body, user);
   }
 
   @Delete(':id')
