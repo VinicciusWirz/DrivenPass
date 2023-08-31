@@ -38,7 +38,9 @@ export class NotesService {
     return `This action updates a #${id} note`;
   }
 
-  remove(id: number) {
+  async remove(id: number, user: User) {
+    await this.findOne(id, user);
+    await this.repository.remove(id, user);
     return `This action removes a #${id} note`;
   }
 
