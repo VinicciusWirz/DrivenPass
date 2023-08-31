@@ -48,8 +48,10 @@ export class CredentialsService {
     };
   }
 
-  remove(id: number, user: User) {
-    return `This action removes a #${id} credential`;
+  async remove(id: number, user: User) {
+    await this.findOne(id, user);
+    await this.repository.remove(id, user);
+    return;
   }
 
   private async findWithTitle(body: CreateCredentialDto, userId: number) {

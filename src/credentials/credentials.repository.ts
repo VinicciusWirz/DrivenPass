@@ -29,4 +29,8 @@ export class CredentialsRepository {
   findOne(id: number) {
     return this.prisma.credential.findUnique({ where: { id } });
   }
+
+  remove(id: number, user: User) {
+    return this.prisma.credential.delete({ where: { id, User: user } });
+  }
 }

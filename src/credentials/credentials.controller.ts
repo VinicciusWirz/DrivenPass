@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
 import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
@@ -36,6 +38,7 @@ export class CredentialsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
     return this.credentialsService.remove(id, user);
   }
