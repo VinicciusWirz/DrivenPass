@@ -16,6 +16,10 @@ export class CardsRepository {
     });
   }
 
+  findAllFromUser(user: User) {
+    return this.prisma.card.findMany({ where: { User: user } });
+  }
+
   findWithTitle(body: CreateCardDto, userId: number) {
     return this.prisma.card.findUnique({
       where: { title_userId: { title: body.title, userId: userId } },

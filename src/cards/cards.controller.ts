@@ -25,8 +25,8 @@ export class CardsController {
   }
 
   @Get()
-  findAll() {
-    return this.cardsService.findAll();
+  findAll(@User() user: UserPrisma) {
+    return this.cardsService.findAll(user);
   }
 
   @Get(':id')
