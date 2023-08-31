@@ -14,8 +14,8 @@ export class NotesService {
     return await this.repository.create(body, user);
   }
 
-  findAll() {
-    return `This action returns all notes`;
+  findAll(user: User) {
+    return this.repository.findAllFromUser(user);
   }
 
   findOne(id: number) {

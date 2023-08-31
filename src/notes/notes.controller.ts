@@ -26,8 +26,8 @@ export class NotesController {
   }
 
   @Get()
-  findAll() {
-    return this.notesService.findAll();
+  findAll(@User() user: UserPrisma) {
+    return this.notesService.findAll(user);
   }
 
   @Get(':id')
