@@ -20,6 +20,10 @@ export class NotesRepository {
     return this.prisma.note.findMany({ where: { User: user } });
   }
 
+  findOne(id: number) {
+    return this.prisma.note.findUnique({ where: { id } });
+  }
+
   findWithTitle(body: CreateNoteDto, userId: number) {
     return this.prisma.note.findUnique({
       where: { title_userId: { title: body.title, userId: userId } },

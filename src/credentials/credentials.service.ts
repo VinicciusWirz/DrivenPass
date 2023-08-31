@@ -39,8 +39,9 @@ export class CredentialsService {
     const { id: userId } = user;
     const credential = await this.repository.findOne(id);
     if (!credential) throw new NotFoundException("Credential doesn't exist.");
-    if (credential.userId !== userId)
+    if (credential.userId !== userId) {
       throw new ForbiddenException("Credential doesn't belong to user.");
+    }
 
     return {
       ...credential,

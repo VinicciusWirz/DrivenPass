@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -31,8 +32,8 @@ export class NotesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notesService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
+    return this.notesService.findOne(id, user);
   }
 
   @Patch(':id')

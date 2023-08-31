@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
@@ -18,8 +23,15 @@ export class NotesService {
     return this.repository.findAllFromUser(user);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} note`;
+  async findOne(id: number, user: User) {
+    const { id: userId } = user;
+    const note = await this.repository.findOne(id);
+    if (!note) throw new NotFoundException("Note doesn't exist.");
+    if (note.userId !== userId) {
+      throw new ForbiddenException("Note doesn't belong to user.");
+    }
+
+    return note;
   }
 
   update(id: number, body: UpdateNoteDto) {
