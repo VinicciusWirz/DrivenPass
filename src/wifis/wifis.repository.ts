@@ -15,4 +15,8 @@ export class WifisRepository {
       },
     });
   }
+
+  findAllFromUser(user: User) {
+    return this.prisma.wifi.findMany({ where: { User: user } });
+  }
 }

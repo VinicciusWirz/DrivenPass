@@ -22,8 +22,8 @@ export class WifisService {
     return await this.repository.create(body, user);
   }
 
-  findAll() {
-    return `This action returns all wifis`;
+  async findAll(user: User) {
+    return await this.repository.findAllFromUser(user);
   }
 
   findOne(id: number) {
