@@ -46,6 +46,8 @@ model Note{
   text            String
   userId          Int
   User            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@unique([title, userId])
   @@map("notes")
@@ -63,6 +65,8 @@ model Card{
   type            CardType
   userId          Int
   User            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@unique([title, userId])
   @@map("cards")
@@ -81,6 +85,8 @@ model Wifi{
   password        String
   userId          Int
   User            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@map("wifis")
 }
@@ -92,6 +98,8 @@ model License{
   licenseKey          String
   userId              Int
   User                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@unique([softwareName, softwareVersion, licenseKey, userId])
   @@map("licenses")
