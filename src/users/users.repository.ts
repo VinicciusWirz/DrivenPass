@@ -36,4 +36,12 @@ export class UsersRepository {
     return this.prisma.user.delete({ where: { id: user.id } });
   }
 
+  count(user: User) {
+    return this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        _count: true,
+      },
+    });
+  }
 }

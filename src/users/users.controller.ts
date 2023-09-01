@@ -7,7 +7,13 @@ import {
   Body,
   Get,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { User as UserPrisma } from '@prisma/client';
 import { User } from '../decorators/user.decorator';
@@ -16,8 +22,8 @@ import { UserVerificationDto } from './dto/user-verification.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
-@Controller('users')
 @UseGuards(AuthGuard)
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -27,10 +33,14 @@ export class UsersController {
   @ApiOperation({ summary: "Delete all user's information" })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
-    description: "Password confirmation failed",
+    description: 'Password confirmation failed',
   })
   delete(@Body() body: UserVerificationDto, @User() user: UserPrisma) {
     return this.usersService.delete(body, user);
   }
 
+  @Get('count')
+  count(@User() user: UserPrisma) {
+    return this.usersService.count(user);
+  }
 }

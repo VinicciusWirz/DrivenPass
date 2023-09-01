@@ -30,4 +30,10 @@ export class UsersService {
 
     return await this.usersRepository.delete(user);
   }
+
+  async count(user: User) {
+    const userInfo = await this.usersRepository.count(user);
+
+    return userInfo._count
+  }
 }
