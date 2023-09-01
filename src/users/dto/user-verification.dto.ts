@@ -6,7 +6,7 @@ export class UserVerificationDto {
   @IsString()
   @ApiProperty({
     example: 'Str0nG!P4szwuRd',
-    description: 'Valid password',
+    description: 'Password confirmation',
   })
   password: string;
 }

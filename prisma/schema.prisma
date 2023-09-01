@@ -82,7 +82,6 @@ model Wifi{
   userId          Int
   User            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([title, userId])
   @@map("wifis")
 }
 
