@@ -2,6 +2,7 @@ import * as bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpDto } from '../auth/dto/signUpDto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
@@ -30,4 +31,9 @@ export class UsersRepository {
       },
     });
   }
+
+  delete(user: User) {
+    return this.prisma.user.delete({ where: { id: user.id } });
+  }
+
 }

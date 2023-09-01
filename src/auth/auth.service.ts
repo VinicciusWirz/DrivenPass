@@ -35,7 +35,7 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email);
     if (!user) throw new UnauthorizedException(`Email or password not valid.`);
 
-    const valid = bcrypt.compare(password, user.password);
+    const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new UnauthorizedException(`Email or password not valid.`);
 
     return this.generateToken(user);
