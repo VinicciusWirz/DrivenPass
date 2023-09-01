@@ -27,7 +27,10 @@ export class WifisService {
   }
 
   async findAll(user: User) {
-    return await this.repository.findAllFromUser(user);
+    const wifis = await this.repository.findAllFromUser(user);
+    return wifis.map(({ password, ...wifi }) => {
+      return { ...wifi, password: this.cryptr.decrypt(password) };
+    });
   }
 
   async findOne(id: number, user: User) {
