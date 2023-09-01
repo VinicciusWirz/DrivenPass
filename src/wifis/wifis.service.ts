@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import Cryptr from 'cryptr';
 import { CreateWifiDto } from './dto/create-wifi.dto';
@@ -26,8 +30,18 @@ export class WifisService {
     return await this.repository.findAllFromUser(user);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} wifi`;
+  async findOne(id: number, user: User) {
+    const { id: userId } = user;
+    const wifi = await this.repository.findOne(id);
+    if (!wifi) throw new NotFoundException("Wifi register doesn't exist.");
+    if (wifi.userId !== userId) {
+      throw new ForbiddenException("Wifi register doesn't belong to user.");
+    }
+
+    return {
+      ...wifi,
+      password: this.cryptr.decrypt(wifi.password),
+    };
   }
 
   remove(id: number) {

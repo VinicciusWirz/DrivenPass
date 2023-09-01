@@ -19,4 +19,8 @@ export class WifisRepository {
   findAllFromUser(user: User) {
     return this.prisma.wifi.findMany({ where: { User: user } });
   }
+
+  findOne(id: number) {
+    return this.prisma.wifi.findUnique({ where: { id } });
+  }
 }
