@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import Cryptr from 'cryptr';
 import { CardsRepository } from './cards.repository';
@@ -27,12 +32,29 @@ export class CardsService {
     return await this.repository.create(body, user);
   }
 
-  async findAll(user:User) {
-    return await this.repository.findAllFromUser(user);
+  async findAll(user: User) {
+    const cards = await this.repository.findAllFromUser(user);
+
+    return cards.map(({ password, cvv, ...card }) => {
+      return {
+        ...card,
+        password: this.cryptr.decrypt(password),
+        cvv: this.cryptr.decrypt(cvv),
+      };
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} card`;
+  async findOne(id: number, user: User) {
+    const { id: userId } = user;
+    const credential = await this.repository.findOne(id);
+    if (!credential) throw new NotFoundException("Card doesn't exist.");
+    if (credential.userId !== userId) {
+      throw new ForbiddenException("Card doesn't belong to user.");
+    }
+
+    credential.password = this.cryptr.decrypt(credential.password);
+    credential.cvv = this.cryptr.decrypt(credential.cvv);
+    return credential;
   }
 
   remove(id: number) {

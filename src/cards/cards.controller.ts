@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '../guards/auth.guard';
 import { CardsService } from './cards.service';
@@ -56,8 +57,8 @@ export class CardsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Card not found',
   })
-  findOne(@Param('id') id: string) {
-    return this.cardsService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
+    return this.cardsService.findOne(id, user);
   }
 
   @Delete(':id')

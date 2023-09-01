@@ -20,6 +20,10 @@ export class CardsRepository {
     return this.prisma.card.findMany({ where: { User: user } });
   }
 
+  findOne(id: number) {
+    return this.prisma.card.findUnique({ where: { id } });
+  }
+
   findWithTitle(body: CreateCardDto, userId: number) {
     return this.prisma.card.findUnique({
       where: { title_userId: { title: body.title, userId: userId } },
