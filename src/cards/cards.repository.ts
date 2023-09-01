@@ -24,6 +24,10 @@ export class CardsRepository {
     return this.prisma.card.findUnique({ where: { id } });
   }
 
+  remove(id: number, user: User) {
+    return this.prisma.card.delete({ where: { id, User: user } });
+  }
+
   findWithTitle(body: CreateCardDto, userId: number) {
     return this.prisma.card.findUnique({
       where: { title_userId: { title: body.title, userId: userId } },

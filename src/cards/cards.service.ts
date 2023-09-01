@@ -57,8 +57,10 @@ export class CardsService {
     return credential;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} card`;
+  async remove(id: number, user: User) {
+    await this.findOne(id, user);
+    await this.repository.remove(id, user);
+    return;
   }
 
   private async findWithTitle(body: CreateCardDto, userId: number) {

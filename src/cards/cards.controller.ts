@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpStatus,
   ParseIntPipe,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '../guards/auth.guard';
 import { CardsService } from './cards.service';
@@ -62,6 +63,7 @@ export class CardsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Delete user's card" })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
@@ -71,7 +73,7 @@ export class CardsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Card not found',
   })
-  remove(@Param('id') id: string) {
-    return this.cardsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
+    return this.cardsService.remove(id, user);
   }
 }
