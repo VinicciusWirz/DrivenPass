@@ -15,7 +15,7 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  describe('root', async () => {
+  describe('root', () => {
     it('/ (GET)', () => {
       return request(app.getHttpServer())
         .get('/')
