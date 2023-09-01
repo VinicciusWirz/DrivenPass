@@ -40,6 +40,7 @@ export class UsersController {
   }
 
   @Get('count')
+  @ApiOperation({ summary: "Counts user's registrations" })
   count(@User() user: UserPrisma) {
     return this.usersService.count(user);
   }
