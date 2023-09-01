@@ -15,6 +15,9 @@ describe('AuthService', () => {
   let dto = new SignUpDto();
   const SALT = 10;
 
+  dto.email = 'email@email.com';
+  dto.password = 'Str0nG!P4szwuRd';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
@@ -27,9 +30,6 @@ describe('AuthService', () => {
       .overrideProvider(PrismaService)
       .useValue(prisma)
       .compile();
-
-    dto.email = 'email@email.com';
-    dto.password = 'Str0nG!P4szwuRd';
 
     service = module.get<AuthService>(AuthService);
     repository = module.get<UsersRepository>(UsersRepository);
