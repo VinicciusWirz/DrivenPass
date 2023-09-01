@@ -21,7 +21,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { User as UserPrisma } from '@prisma/client';
 import { User } from '../decorators/user.decorator';
 
-@ApiTags('Credentials')
+@ApiTags('Licenses')
 @ApiBearerAuth()
 @UseGuards(AuthGuard)
 @Controller('licenses')
@@ -40,8 +40,9 @@ export class LicensesController {
   }
 
   @Get()
-  findAll() {
-    return this.licensesService.findAll();
+  @ApiOperation({ summary: "List all user's licenses" })
+  findAll(@User() user: UserPrisma) {
+    return this.licensesService.findAll(user);
   }
 
   @Get(':id')

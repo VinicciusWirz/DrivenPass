@@ -16,6 +16,10 @@ export class LicensesRepository {
     });
   }
 
+  findAllFromUser(user: User) {
+    return this.prisma.license.findMany({ where: { User: user } });
+  }
+
   findConflict(body: CreateLicenseDto, user: User) {
     return this.prisma.license.findUnique({
       where: {
