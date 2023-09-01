@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { LicensesRepository } from './licenses.repository';
@@ -17,8 +22,17 @@ export class LicensesService {
     return await this.repository.findAllFromUser(user);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} license`;
+  async findOne(id: number, user: User) {
+    const { id: userId } = user;
+    const license = await this.repository.findOne(id);
+    if (!license) {
+      throw new NotFoundException("License register doesn't exist.");
+    }
+    if (license.userId !== userId) {
+      throw new ForbiddenException("License register doesn't belong to user.");
+    }
+
+    return license;
   }
 
   remove(id: number) {

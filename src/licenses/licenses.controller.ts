@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { LicensesService } from './licenses.service';
 import { CreateLicenseDto } from './dto/create-license.dto';
@@ -46,8 +47,17 @@ export class LicensesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.licensesService.findOne(+id);
+  @ApiOperation({ summary: "Find one user's license" })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "License register doesn't belong to user",
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'License register not found',
+  })
+  findOne(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
+    return this.licensesService.findOne(id, user);
   }
 
   @Delete(':id')
