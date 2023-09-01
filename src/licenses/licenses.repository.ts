@@ -24,6 +24,10 @@ export class LicensesRepository {
     return this.prisma.license.findUnique({ where: { id } });
   }
 
+  remove(id: number, user: User) {
+    return this.prisma.license.delete({ where: { id, User: user } });
+  }
+
   findConflict(body: CreateLicenseDto, user: User) {
     return this.prisma.license.findUnique({
       where: {

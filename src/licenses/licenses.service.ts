@@ -35,8 +35,10 @@ export class LicensesService {
     return license;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} license`;
+  async remove(id: number, user: User) {
+    await this.findOne(id, user);
+    await this.repository.remove(id, user);
+    return;
   }
 
   private async findConflict(body: CreateLicenseDto, user: User) {
