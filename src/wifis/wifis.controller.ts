@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpStatus,
   ParseIntPipe,
+  HttpCode,
 } from '@nestjs/common';
 import { WifisService } from './wifis.service';
 import { CreateWifiDto } from './dto/create-wifi.dto';
@@ -52,7 +53,17 @@ export class WifisController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.wifisService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Delete user's wifi register" })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "Wifi register doesn't belong to user",
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Wifi register not found',
+  })
+  remove(@Param('id', ParseIntPipe) id: number, @User() user: UserPrisma) {
+    return this.wifisService.remove(id, user);
   }
 }

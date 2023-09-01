@@ -23,4 +23,8 @@ export class WifisRepository {
   findOne(id: number) {
     return this.prisma.wifi.findUnique({ where: { id } });
   }
+
+  remove(id: number, user: User) {
+    return this.prisma.wifi.delete({ where: { id, User: user } });
+  }
 }
