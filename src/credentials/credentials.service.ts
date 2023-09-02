@@ -8,16 +8,20 @@ import Cryptr from 'cryptr';
 import { User } from '@prisma/client';
 import { CredentialsRepository } from './credentials.repository';
 import { CreateCredentialDto } from './dto/create-credential.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CredentialsService {
   private cryptr: Cryptr;
 
-  constructor(private readonly repository: CredentialsRepository) {
+  constructor(
+    private readonly repository: CredentialsRepository,
+    private readonly config: ConfigService,
+  ) {
     const Cryptr = require('cryptr');
-    this.cryptr = new Cryptr(process.env.CRYPTR_SECRET, {
+    this.cryptr = new Cryptr(this.config.get<string>('CRYPTR_SECRET'), {
       pbkdf2Iterations: 10000,
-      saltLength: 10,
+      saltLength: parseInt(this.config.get<string>('SALT')),
     });
   }
 

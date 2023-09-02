@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
 import Cryptr from 'cryptr';
 import { CreateWifiDto } from './dto/create-wifi.dto';
@@ -12,11 +13,14 @@ import { WifisRepository } from './wifis.repository';
 export class WifisService {
   private cryptr: Cryptr;
 
-  constructor(private readonly repository: WifisRepository) {
+  constructor(
+    private readonly repository: WifisRepository,
+    private readonly config: ConfigService,
+  ) {
     const Cryptr = require('cryptr');
-    this.cryptr = new Cryptr(process.env.CRYPTR_SECRET, {
+    this.cryptr = new Cryptr(this.config.get<string>('CRYPTR_SECRET'), {
       pbkdf2Iterations: 10000,
-      saltLength: 10,
+      saltLength: parseInt(this.config.get<string>('SALT')),
     });
   }
 

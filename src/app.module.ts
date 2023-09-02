@@ -10,9 +10,23 @@ import { CardsModule } from './cards/cards.module';
 import { WifisModule } from './wifis/wifis.module';
 import { LicensesModule } from './licenses/licenses.module';
 import { HealthModule } from './health/health.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, CredentialsModule, NotesModule, CardsModule, WifisModule, LicensesModule, HealthModule],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    CredentialsModule,
+    NotesModule,
+    CardsModule,
+    WifisModule,
+    LicensesModule,
+    HealthModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

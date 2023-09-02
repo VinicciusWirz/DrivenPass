@@ -1,12 +1,16 @@
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 import { PrismaClient } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 export class SignUpFactory {
   private prisma: PrismaClient;
-  private SALT = 10;
+  private SALT = parseInt(this.config.get<string>('SALT'));
 
-  constructor(prisma: PrismaClient) {
+  constructor(
+    prisma: PrismaClient,
+    private readonly config: ConfigService,
+  ) {
     this.prisma = prisma;
   }
 

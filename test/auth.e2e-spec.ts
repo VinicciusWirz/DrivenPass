@@ -7,15 +7,22 @@ import { PrismaModule } from '../src/prisma/prisma.module';
 import { SignUpFactory } from './factories/sign-up.factory';
 import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
+import { ConfigModule, ConfigService } from '@nestjs/config/dist';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
+  const config = new ConfigService();
   const prisma = new PrismaService();
-  const signUpFactory = new SignUpFactory(prisma);
+  const signUpFactory = new SignUpFactory(prisma, config);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule, UsersModule, PrismaModule],
+      imports: [
+        AuthModule,
+        UsersModule,
+        PrismaModule,
+        ConfigModule.forRoot({ isGlobal: true }),
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)

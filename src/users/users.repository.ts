@@ -3,12 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpDto } from '../auth/dto/signUpDto';
 import { User } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersRepository {
-  private SALT = 10;
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   getById(id: number) {
     return this.prisma.user.findUnique({
@@ -27,7 +29,10 @@ export class UsersRepository {
     return this.prisma.user.create({
       data: {
         email,
-        password: bcrypt.hashSync(password, this.SALT),
+        password: bcrypt.hashSync(
+          password,
+          parseInt(this.config.get<string>('SALT')),
+        ),
       },
     });
   }

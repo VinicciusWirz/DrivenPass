@@ -7,25 +7,28 @@ import { UsersRepository } from '../users/users.repository';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signUpDto';
+import { ConfigModule } from '@nestjs/config';
 
 describe('AuthService', () => {
   let service: AuthService;
   let prisma = new PrismaService();
   let repository: UsersRepository;
   let dto = new SignUpDto();
-  const SALT = 10;
+  const SALT = process.env.SALT;
 
   dto.email = 'email@email.com';
   dto.password = 'Str0nG!P4szwuRd';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        JwtModule.register({
-          secret: process.env.JWT_SECRET,
-        }),
+      imports: [JwtModule.register({})],
+      providers: [
+        AuthService,
+        PrismaService,
+        UsersService,
+        UsersRepository,
+        ConfigModule,
       ],
-      providers: [AuthService, PrismaService, UsersService, UsersRepository],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
