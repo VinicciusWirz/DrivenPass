@@ -14,6 +14,7 @@ describe('Auth (e2e)', () => {
   const config = new ConfigService();
   const prisma = new PrismaService();
   const signUpFactory = new SignUpFactory(prisma, config);
+  const helper = new Helper(prisma, config);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -37,7 +38,7 @@ describe('Auth (e2e)', () => {
       }),
     );
 
-    await Helper.cleanDB(prisma);
+    await helper.cleanDB();
     await app.init();
   });
 

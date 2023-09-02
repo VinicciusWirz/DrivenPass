@@ -50,15 +50,15 @@ export class CardsService {
 
   async findOne(id: number, user: User) {
     const { id: userId } = user;
-    const credential = await this.repository.findOne(id);
-    if (!credential) throw new NotFoundException("Card doesn't exist.");
-    if (credential.userId !== userId) {
+    const card = await this.repository.findOne(id);
+    if (!card) throw new NotFoundException("Card doesn't exist.");
+    if (card.userId !== userId) {
       throw new ForbiddenException("Card doesn't belong to user.");
     }
 
-    credential.password = this.cryptr.decrypt(credential.password);
-    credential.cvv = this.cryptr.decrypt(credential.cvv);
-    return credential;
+    card.password = this.cryptr.decrypt(card.password);
+    card.cvv = this.cryptr.decrypt(card.cvv);
+    return card;
   }
 
   async remove(id: number, user: User) {
@@ -68,7 +68,7 @@ export class CardsService {
   }
 
   private async findWithTitle(body: CreateCardDto, userId: number) {
-    const credential = await this.repository.findWithTitle(body, userId);
-    if (credential) throw new ConflictException('Title already registered');
+    const card = await this.repository.findWithTitle(body, userId);
+    if (card) throw new ConflictException('Title already registered');
   }
 }

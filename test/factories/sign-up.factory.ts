@@ -2,10 +2,16 @@ import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 export class SignUpFactory {
   private prisma: PrismaClient;
-  private SALT = parseInt(this.config.get<string>('SALT'));
+  private readonly jwtService = new JwtService();
+  private readonly SALT = parseInt(this.config.get<string>('SALT'));
+  private readonly SECRET = this.config.get<string>('JWT_SECRET');
+  private readonly EXPIRATION_TIME = '7 days';
+  private readonly ISSUER = 'Driven';
+  private readonly AUDIENCE = 'users';
 
   constructor(
     prisma: PrismaClient,
@@ -29,5 +35,19 @@ export class SignUpFactory {
       },
     });
     return { ...user, nonCryptedPassword };
+  }
+
+  async generateToken(email: string, userId: number) {
+    const token = this.jwtService.sign(
+      { email },
+      {
+        expiresIn: this.EXPIRATION_TIME,
+        subject: String(userId),
+        issuer: this.ISSUER,
+        audience: this.AUDIENCE,
+        secret: this.SECRET,
+      },
+    );
+    return { token };
   }
 }
