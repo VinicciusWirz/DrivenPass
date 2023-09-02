@@ -9,7 +9,7 @@ import {
 @ValidatorConstraint({ name: 'expirationDate' })
 export class ExpirtaionDateConstraint implements ValidatorConstraintInterface {
   validate(value: any, validationArguments?: ValidationArguments) {
-    const regex = /^(0[1-9]|1[0-2])\/(0[0-9]|1[0-9]|2[0-9])$/;
+    const regex = /^(0[1-9]|1[0-2])\/(0[0-9]|[1-9][0-9])$/;
     return regex.test(value);
   }
 

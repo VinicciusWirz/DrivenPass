@@ -45,6 +45,7 @@ export class AuthService {
 
   checkToken(token: string) {
     const data = this.jwtService.verify(token, {
+      secret: this.config.get<string>('JWT_SECRET'),
       audience: this.AUDIENCE,
       issuer: this.ISSUER,
     });
