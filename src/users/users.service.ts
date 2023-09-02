@@ -34,6 +34,6 @@ export class UsersService {
   async count(user: User) {
     const userInfo = await this.usersRepository.count(user);
 
-    return userInfo._count
+    return userInfo._count;
   }
 }

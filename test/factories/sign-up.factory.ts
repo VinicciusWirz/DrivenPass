@@ -20,7 +20,7 @@ export class SignUpFactory {
     this.prisma = prisma;
   }
 
-  async createSignup(email?: string, password?: string) {
+  async createSignup(password?: string) {
     const nonCryptedPassword =
       password ||
       faker.internet.password({
@@ -28,13 +28,14 @@ export class SignUpFactory {
         pattern: /[\w!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/,
       });
     const hash = bcrypt.hashSync(nonCryptedPassword, this.SALT);
+
     const user = await this.prisma.user.create({
       data: {
-        email: email || faker.internet.email(),
+        email: faker.internet.email(),
         password: hash,
       },
     });
-    return { ...user, nonCryptedPassword };
+    return user;
   }
 
   async generateToken(email: string, userId: number) {

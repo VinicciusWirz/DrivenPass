@@ -100,8 +100,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return conflict when credential title is already registered', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
@@ -119,8 +118,7 @@ describe('Credentials (e2e)', () => {
 
   describe('GET /credentials', () => {
     it("should return all user's credentials", async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
       const numberOfCredentials = 5;
@@ -147,8 +145,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return decrypted params', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
@@ -185,8 +182,7 @@ describe('Credentials (e2e)', () => {
 
   describe('GET /credentials/:id', () => {
     it("should return specific user's credential with decrypted params", async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
@@ -207,8 +203,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -218,8 +213,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
       const { token } = signUpFactory.genFaketoken();
@@ -242,8 +236,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return foribdden when credential's id isn't from user", async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { deployed } = await credentialsFactory.registerCredential(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
@@ -270,8 +263,7 @@ describe('Credentials (e2e)', () => {
 
   describe('DELETE /credentials/:id', () => {
     it("should delete user's specific credential", async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
@@ -285,8 +277,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -296,8 +287,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -320,8 +310,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return foribdden when credential's id isn't from user", async () => {
-      const { nonCryptedPassword, ...user } =
-        await signUpFactory.createSignup();
+      const user = await signUpFactory.createSignup();
       const { deployed } = await credentialsFactory.registerCredential(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();

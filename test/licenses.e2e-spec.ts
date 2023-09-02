@@ -6,18 +6,18 @@ import { AuthModule } from '../src/auth/auth.module';
 import { PrismaModule } from '../src/prisma/prisma.module';
 import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
-import { CardsModule } from '../src/cards/cards.module';
-import { CardsFactory } from './factories/cards.factory';
+import { LicensesModule } from '../src/licenses/licenses.module';
+import { LicensesFactory } from './factories/licenses.factory';
 import { SignUpFactory } from './factories/sign-up.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-describe('Cards (e2e)', () => {
+describe('Licenses (e2e)', () => {
   let app: INestApplication;
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
   const signUpFactory = new SignUpFactory(prisma, config);
-  const cardsFactory = new CardsFactory(prisma, helper);
+  const licensesFactory = new LicensesFactory(prisma);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -25,7 +25,7 @@ describe('Cards (e2e)', () => {
         AuthModule,
         UsersModule,
         PrismaModule,
-        CardsModule,
+        LicensesModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -46,15 +46,15 @@ describe('Cards (e2e)', () => {
     await app.init();
   });
 
-  describe('POST /cards', () => {
-    it('should register a new card', async () => {
+  describe('POST /licenses', () => {
+    it('should register a new license', async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const dto = cardsFactory.generateDto();
+      const dto = licensesFactory.generateDto();
 
       const response = await request(app.getHttpServer())
-        .post('/cards')
+        .post('/licenses')
         .send(dto)
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
@@ -62,30 +62,28 @@ describe('Cards (e2e)', () => {
         ...dto,
         id: expect.any(Number),
         userId,
-        password: expect.any(String),
-        cvv: expect.any(String),
         updatedAt: expect.any(String),
         createdAt: expect.any(String),
       });
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const dto = cardsFactory.generateDto();
+      const dto = licensesFactory.generateDto();
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/licenses')
         .send(dto)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const dto = cardsFactory.generateDto();
+      const dto = licensesFactory.generateDto();
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .post('/cards')
-        .set('Authorization', `bearer ${token}`)
+        .post('/licenses')
         .send(dto)
+        .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
@@ -94,116 +92,89 @@ describe('Cards (e2e)', () => {
       const { token } = await signUpFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/licenses')
         .send({})
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.BAD_REQUEST);
     });
 
-    it('should return conflict when card title is already registered', async () => {
+    it('should return conflict when license title is already registered', async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed } = await cardsFactory.registerCard(user);
-
-      const dto = cardsFactory.generateDto();
+      const { deployed } = await licensesFactory.registerLicense(user);
+      const { licenseKey, softwareName, softwareVersion } = deployed;
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/licenses')
         .set('Authorization', `bearer ${token}`)
-        .send({ ...dto, title: deployed.title })
+        .send({
+          softwareName,
+          softwareVersion,
+          licenseKey,
+        })
         .expect(HttpStatus.CONFLICT);
     });
   });
 
-  describe('GET /cards', () => {
-    it("should return all user's cards", async () => {
+  describe('GET /licenses', () => {
+    it("should return all user's licenses", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
-      const numberOfCards = 5;
-      for (let i = 0; i < numberOfCards; i++) {
-        await cardsFactory.registerCard(user);
+      const numberOfLicenses = 5;
+      for (let i = 0; i < numberOfLicenses; i++) {
+        await licensesFactory.registerLicense(user);
       }
 
-      const cards = await request(app.getHttpServer())
-        .get('/cards')
+      const licenses = await request(app.getHttpServer())
+        .get('/licenses')
         .set('Authorization', `bearer ${token}`);
 
-      expect(cards.statusCode).toBe(HttpStatus.OK);
-      expect(cards.body).toHaveLength(numberOfCards);
-      expect(cards.body[0]).toEqual({
+      expect(licenses.statusCode).toBe(HttpStatus.OK);
+      expect(licenses.body).toHaveLength(numberOfLicenses);
+      expect(licenses.body[0]).toEqual({
         id: expect.any(Number),
-        cvv: expect.any(String),
-        expiration: expect.any(String),
-        name: expect.any(String),
-        number: expect.any(String),
-        password: expect.any(String),
-        title: expect.any(String),
-        type: expect.any(String),
-        virtual: expect.any(Boolean),
+        softwareName: expect.any(String),
+        softwareVersion: expect.any(String),
+        licenseKey: expect.any(String),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
         userId,
       });
     });
 
-    it('should return decrypted params', async () => {
-      const user = await signUpFactory.createSignup();
-      const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
-
-      const { body, deployed } = await cardsFactory.registerCard(user);
-
-      const cards = await request(app.getHttpServer())
-        .get('/cards')
-        .set('Authorization', `bearer ${token}`);
-
-      expect(cards.statusCode).toBe(HttpStatus.OK);
-      expect(cards.body[0]).toEqual({
-        ...deployed,
-        password: body.password,
-        cvv: body.cvv,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-      });
-    });
-
     it('should return unauthorized when token is missing', async () => {
       return request(app.getHttpServer())
-        .get('/cards')
-
+        .get('/licenses')
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const { token } = signUpFactory.genFaketoken();
-
       return request(app.getHttpServer())
-        .get('/cards')
+        .get('/licenses')
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
-  describe('GET /cards/:id', () => {
-    it("should return specific user's card with decrypted params", async () => {
+  describe('GET /licenses/:id', () => {
+    it("should return specific user's license", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed, body } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+      const license = await request(app.getHttpServer())
+        .get(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.OK);
-      expect(card.body).toEqual({
+      expect(license.statusCode).toBe(HttpStatus.OK);
+      expect(license.body).toEqual({
         ...deployed,
-        password: body.password,
-        cvv: body.cvv,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
@@ -212,22 +183,21 @@ describe('Cards (e2e)', () => {
     it('should return unauthorized when token is missing', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
       return request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+        .get(`/licenses/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
-
+      const { deployed } = await licensesFactory.registerLicense(user);
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+        .get(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -236,73 +206,72 @@ describe('Cards (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/A`)
+      const license = await request(app.getHttpServer())
+        .get(`/licenses/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(license.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return foribdden when license's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+      const license = await request(app.getHttpServer())
+        .get(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(license.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when card's id doesn't exist", async () => {
+    it("should return not found when license's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/1`)
+      const license = await request(app.getHttpServer())
+        .get(`/licenses/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(license.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 
-  describe('DELETE /cards/:id', () => {
-    it("should delete user's specific card", async () => {
+  describe('DELETE /licenses/:id', () => {
+    it("should delete user's specific license", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+      const license = await request(app.getHttpServer())
+        .delete(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NO_CONTENT);
+      expect(license.statusCode).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('should return unauthorized when token is missing', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
       return request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+        .delete(`/licenses/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
       const { token } = signUpFactory.genFaketoken();
-
       return request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+        .delete(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -311,36 +280,36 @@ describe('Cards (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/A`)
+      const license = await request(app.getHttpServer())
+        .delete(`/licenses/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(license.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return foribdden when license's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await licensesFactory.registerLicense(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+      const license = await request(app.getHttpServer())
+        .delete(`/licenses/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(license.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when card's id doesn't exist", async () => {
+    it("should return not found when license's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/1`)
+      const license = await request(app.getHttpServer())
+        .delete(`/licenses/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(license.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 });

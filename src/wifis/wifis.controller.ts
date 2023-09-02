@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
@@ -14,7 +13,13 @@ import {
 import { WifisService } from './wifis.service';
 import { CreateWifiDto } from './dto/create-wifi.dto';
 import { AuthGuard } from '../guards/auth.guard';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { User as UserPrisma } from '@prisma/client';
 import { User } from '../decorators/user.decorator';
 

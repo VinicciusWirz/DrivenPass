@@ -11,9 +11,9 @@ import { ConfigModule } from '@nestjs/config';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma = new PrismaService();
+  const prisma = new PrismaService();
   let repository: UsersRepository;
-  let dto = new SignUpDto();
+  const dto = new SignUpDto();
   const SALT = process.env.SALT;
 
   dto.email = 'email@email.com';

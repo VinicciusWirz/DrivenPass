@@ -84,8 +84,8 @@ describe('Auth (e2e)', () => {
 
   describe('POST users/sign-in', () => {
     it('should sign-in into an account and send a token', async () => {
-      const { email, nonCryptedPassword: password } =
-        await signUpFactory.createSignup();
+      const password = 'Str0nG!P4szwuRd';
+      const { email } = await signUpFactory.createSignup(password);
 
       const signIn = await request(app.getHttpServer())
         .post('/auth/users/sign-in')
