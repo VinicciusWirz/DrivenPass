@@ -3,8 +3,9 @@ import { faker } from '@faker-js/faker';
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { SignUpDto } from '../../src/auth/dto/signUpDto';
 
-export class SignUpFactory {
+export class AuthFactory {
   private prisma: PrismaClient;
   private readonly jwtService = new JwtService();
   private readonly SALT = parseInt(this.config.get<string>('SALT'));
@@ -20,18 +21,29 @@ export class SignUpFactory {
     this.prisma = prisma;
   }
 
-  async createSignup(password?: string) {
+  generateDto(password?: string) {
+    const dto = new SignUpDto();
+
     const nonCryptedPassword =
       password ||
       faker.internet.password({
         length: 10,
         pattern: /[\w!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/,
       });
-    const hash = bcrypt.hashSync(nonCryptedPassword, this.SALT);
+
+    dto.email = faker.internet.email();
+    dto.password = nonCryptedPassword;
+    return dto;
+  }
+
+  async createSignup(password?: string) {
+    const dto = this.generateDto(password);
+
+    const hash = bcrypt.hashSync(dto.password, this.SALT);
 
     const user = await this.prisma.user.create({
       data: {
-        email: faker.internet.email(),
+        email: dto.email,
         password: hash,
       },
     });

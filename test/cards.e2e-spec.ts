@@ -8,7 +8,7 @@ import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
 import { CardsModule } from '../src/cards/cards.module';
 import { CardsFactory } from './factories/cards.factory';
-import { SignUpFactory } from './factories/sign-up.factory';
+import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 describe('Cards (e2e)', () => {
@@ -16,7 +16,7 @@ describe('Cards (e2e)', () => {
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
-  const signUpFactory = new SignUpFactory(prisma, config);
+  const authFactory = new AuthFactory(prisma, config);
   const cardsFactory = new CardsFactory(prisma, helper);
 
   beforeEach(async () => {
@@ -48,8 +48,8 @@ describe('Cards (e2e)', () => {
 
   describe('POST /cards', () => {
     it('should register a new card', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const dto = cardsFactory.generateDto();
 
@@ -80,7 +80,7 @@ describe('Cards (e2e)', () => {
 
     it('should return unauthorized when token is not valid', async () => {
       const dto = cardsFactory.generateDto();
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .post('/cards')
@@ -90,8 +90,8 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return bad request when body is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
         .post('/cards')
@@ -101,9 +101,9 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return conflict when card title is already registered', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await cardsFactory.registerCard(user);
 
@@ -119,9 +119,9 @@ describe('Cards (e2e)', () => {
 
   describe('GET /cards', () => {
     it("should return all user's cards", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
       const numberOfCards = 5;
       for (let i = 0; i < numberOfCards; i++) {
         await cardsFactory.registerCard(user);
@@ -150,9 +150,9 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return decrypted params', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { body, deployed } = await cardsFactory.registerCard(user);
 
@@ -178,7 +178,7 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .get('/cards')
@@ -189,9 +189,9 @@ describe('Cards (e2e)', () => {
 
   describe('GET /cards/:id', () => {
     it("should return specific user's card with decrypted params", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed, body } = await cardsFactory.registerCard(user);
 
@@ -210,7 +210,7 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await cardsFactory.registerCard(user);
 
@@ -220,11 +220,11 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await cardsFactory.registerCard(user);
 
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .get(`/cards/${deployed.id}`)
@@ -233,8 +233,8 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .get(`/cards/A`)
@@ -244,11 +244,11 @@ describe('Cards (e2e)', () => {
     });
 
     it("should return forbidden when card's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await cardsFactory.registerCard(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .get(`/cards/${deployed.id}`)
@@ -258,8 +258,8 @@ describe('Cards (e2e)', () => {
     });
 
     it("should return not found when card's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .get(`/cards/1`)
@@ -271,9 +271,9 @@ describe('Cards (e2e)', () => {
 
   describe('DELETE /cards/:id', () => {
     it("should delete user's specific card", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await cardsFactory.registerCard(user);
 
@@ -285,7 +285,7 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await cardsFactory.registerCard(user);
 
@@ -295,11 +295,11 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await cardsFactory.registerCard(user);
 
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .delete(`/cards/${deployed.id}`)
@@ -308,8 +308,8 @@ describe('Cards (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .delete(`/cards/A`)
@@ -319,11 +319,11 @@ describe('Cards (e2e)', () => {
     });
 
     it("should return forbidden when card's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await cardsFactory.registerCard(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .delete(`/cards/${deployed.id}`)
@@ -333,8 +333,8 @@ describe('Cards (e2e)', () => {
     });
 
     it("should return not found when card's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const card = await request(app.getHttpServer())
         .delete(`/cards/1`)

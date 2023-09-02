@@ -4,7 +4,7 @@ import * as request from 'supertest';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthModule } from '../src/auth/auth.module';
 import { PrismaModule } from '../src/prisma/prisma.module';
-import { SignUpFactory } from './factories/sign-up.factory';
+import { AuthFactory } from './factories/auth.factory';
 import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
 import { ConfigModule, ConfigService } from '@nestjs/config/dist';
@@ -13,7 +13,7 @@ describe('Auth (e2e)', () => {
   let app: INestApplication;
   const config = new ConfigService();
   const prisma = new PrismaService();
-  const signUpFactory = new SignUpFactory(prisma, config);
+  const authFactory = new AuthFactory(prisma, config);
   const helper = new Helper(prisma, config);
 
   beforeEach(async () => {
@@ -52,7 +52,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('should return conflict when user is already registered', async () => {
-      const { email } = await signUpFactory.createSignup();
+      const { email } = await authFactory.createSignup();
 
       return request(app.getHttpServer())
         .post('/auth/users/sign-up')
@@ -85,7 +85,7 @@ describe('Auth (e2e)', () => {
   describe('POST users/sign-in', () => {
     it('should sign-in into an account and send a token', async () => {
       const password = 'Str0nG!P4szwuRd';
-      const { email } = await signUpFactory.createSignup(password);
+      const { email } = await authFactory.createSignup(password);
 
       const signIn = await request(app.getHttpServer())
         .post('/auth/users/sign-in')
@@ -103,7 +103,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('should return unauthorized error when body is not valid', async () => {
-      const { email } = await signUpFactory.createSignup();
+      const { email } = await authFactory.createSignup();
 
       return request(app.getHttpServer())
         .post('/auth/users/sign-in')

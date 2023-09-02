@@ -8,7 +8,7 @@ import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
 import { CredentialsModule } from '../src/credentials/credentials.module';
 import { CredentialsFactory } from './factories/credentials.factory';
-import { SignUpFactory } from './factories/sign-up.factory';
+import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 describe('Credentials (e2e)', () => {
@@ -16,7 +16,7 @@ describe('Credentials (e2e)', () => {
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
-  const signUpFactory = new SignUpFactory(prisma, config);
+  const authFactory = new AuthFactory(prisma, config);
   const credentialsFactory = new CredentialsFactory(prisma, helper);
 
   beforeEach(async () => {
@@ -48,8 +48,8 @@ describe('Credentials (e2e)', () => {
 
   describe('POST /credentials', () => {
     it('should register a new credential', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const dto = credentialsFactory.generateDto();
 
@@ -79,7 +79,7 @@ describe('Credentials (e2e)', () => {
 
     it('should return unauthorized when token is not valid', async () => {
       const dto = credentialsFactory.generateDto();
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .post('/credentials')
@@ -89,8 +89,8 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return bad request when body is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
         .post('/credentials')
@@ -100,9 +100,9 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return conflict when credential title is already registered', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -118,9 +118,9 @@ describe('Credentials (e2e)', () => {
 
   describe('GET /credentials', () => {
     it("should return all user's credentials", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
       const numberOfCredentials = 5;
       for (let i = 0; i < numberOfCredentials; i++) {
         await credentialsFactory.registerCredential(user);
@@ -145,9 +145,9 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return decrypted params', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { body, deployed } =
         await credentialsFactory.registerCredential(user);
@@ -172,7 +172,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
       return request(app.getHttpServer())
         .get('/credentials')
         .set('Authorization', `bearer ${token}`)
@@ -182,9 +182,9 @@ describe('Credentials (e2e)', () => {
 
   describe('GET /credentials/:id', () => {
     it("should return specific user's credential with decrypted params", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed, body } =
         await credentialsFactory.registerCredential(user);
@@ -203,7 +203,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -213,10 +213,10 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .get(`/credentials/${deployed.id}`)
@@ -225,8 +225,8 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .get(`/credentials/A`)
@@ -236,11 +236,11 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return forbidden when credential's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await credentialsFactory.registerCredential(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .get(`/credentials/${deployed.id}`)
@@ -250,8 +250,8 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return not found when credential's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .get(`/credentials/1`)
@@ -263,9 +263,9 @@ describe('Credentials (e2e)', () => {
 
   describe('DELETE /credentials/:id', () => {
     it("should delete user's specific credential", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -277,7 +277,7 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
@@ -287,11 +287,11 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await credentialsFactory.registerCredential(user);
 
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
       return request(app.getHttpServer())
         .delete(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
@@ -299,8 +299,8 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .delete(`/credentials/A`)
@@ -310,11 +310,11 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return forbidden when credential's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await credentialsFactory.registerCredential(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .delete(`/credentials/${deployed.id}`)
@@ -324,8 +324,8 @@ describe('Credentials (e2e)', () => {
     });
 
     it("should return not found when credential's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const credential = await request(app.getHttpServer())
         .delete(`/credentials/1`)

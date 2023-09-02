@@ -8,7 +8,7 @@ import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
 import { WifisModule } from '../src/wifis/wifis.module';
 import { WifisFactory } from './factories/wifis.factory';
-import { SignUpFactory } from './factories/sign-up.factory';
+import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 describe('Wifis (e2e)', () => {
@@ -16,7 +16,7 @@ describe('Wifis (e2e)', () => {
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
-  const signUpFactory = new SignUpFactory(prisma, config);
+  const authFactory = new AuthFactory(prisma, config);
   const wifisFactory = new WifisFactory(prisma, helper);
 
   beforeEach(async () => {
@@ -48,8 +48,8 @@ describe('Wifis (e2e)', () => {
 
   describe('POST /wifis', () => {
     it('should register a new wifi', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const dto = wifisFactory.generateDto();
 
@@ -79,7 +79,7 @@ describe('Wifis (e2e)', () => {
 
     it('should return unauthorized when token is not valid', async () => {
       const dto = wifisFactory.generateDto();
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .post('/wifis')
@@ -89,8 +89,8 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return bad request when body is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
         .post('/wifis')
@@ -102,9 +102,9 @@ describe('Wifis (e2e)', () => {
 
   describe('GET /wifis', () => {
     it("should return all user's wifis", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
       const numberOfWifis = 5;
       for (let i = 0; i < numberOfWifis; i++) {
         await wifisFactory.registerWifi(user);
@@ -128,9 +128,9 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return decrypted params', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { body, deployed } = await wifisFactory.registerWifi(user);
 
@@ -154,7 +154,7 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
       return request(app.getHttpServer())
         .get('/wifis')
         .set('Authorization', `bearer ${token}`)
@@ -164,9 +164,9 @@ describe('Wifis (e2e)', () => {
 
   describe('GET /wifis/:id', () => {
     it("should return specific user's wifi with decrypted params", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed, body } = await wifisFactory.registerWifi(user);
 
@@ -184,7 +184,7 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await wifisFactory.registerWifi(user);
 
@@ -194,10 +194,10 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await wifisFactory.registerWifi(user);
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
 
       return request(app.getHttpServer())
         .get(`/wifis/${deployed.id}`)
@@ -206,8 +206,8 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .get(`/wifis/A`)
@@ -217,11 +217,11 @@ describe('Wifis (e2e)', () => {
     });
 
     it("should return forbidden when wifi's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await wifisFactory.registerWifi(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .get(`/wifis/${deployed.id}`)
@@ -231,8 +231,8 @@ describe('Wifis (e2e)', () => {
     });
 
     it("should return not found when wifi's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .get(`/wifis/1`)
@@ -244,9 +244,9 @@ describe('Wifis (e2e)', () => {
 
   describe('DELETE /wifis/:id', () => {
     it("should delete user's specific wifi", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await wifisFactory.registerWifi(user);
 
@@ -258,7 +258,7 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await wifisFactory.registerWifi(user);
 
@@ -268,11 +268,11 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
 
       const { deployed } = await wifisFactory.registerWifi(user);
 
-      const { token } = signUpFactory.genFaketoken();
+      const { token } = authFactory.genFaketoken();
       return request(app.getHttpServer())
         .delete(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
@@ -280,8 +280,8 @@ describe('Wifis (e2e)', () => {
     });
 
     it('should return bad request when id is not valid', async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .delete(`/wifis/A`)
@@ -291,11 +291,11 @@ describe('Wifis (e2e)', () => {
     });
 
     it("should return forbidden when wifi's id isn't from user", async () => {
-      const user = await signUpFactory.createSignup();
+      const user = await authFactory.createSignup();
       const { deployed } = await wifisFactory.registerWifi(user);
 
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .delete(`/wifis/${deployed.id}`)
@@ -305,8 +305,8 @@ describe('Wifis (e2e)', () => {
     });
 
     it("should return not found when wifi's id doesn't exist", async () => {
-      const { email, id: userId } = await signUpFactory.createSignup();
-      const { token } = await signUpFactory.generateToken(email, userId);
+      const { email, id: userId } = await authFactory.createSignup();
+      const { token } = await authFactory.generateToken(email, userId);
 
       const wifi = await request(app.getHttpServer())
         .delete(`/wifis/1`)
