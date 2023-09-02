@@ -213,7 +213,7 @@ describe('Licenses (e2e)', () => {
       expect(license.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when license's id isn't from user", async () => {
+    it("should return forbidden when license's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
       const { deployed } = await licensesFactory.registerLicense(user);
 
@@ -287,7 +287,7 @@ describe('Licenses (e2e)', () => {
       expect(license.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when license's id isn't from user", async () => {
+    it("should return forbidden when license's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
       const { deployed } = await licensesFactory.registerLicense(user);
 

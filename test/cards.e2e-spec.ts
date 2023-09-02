@@ -243,7 +243,7 @@ describe('Cards (e2e)', () => {
       expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return forbidden when card's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
       const { deployed } = await cardsFactory.registerCard(user);
 
@@ -318,7 +318,7 @@ describe('Cards (e2e)', () => {
       expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return forbidden when card's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
       const { deployed } = await cardsFactory.registerCard(user);
 

@@ -6,18 +6,18 @@ import { AuthModule } from '../src/auth/auth.module';
 import { PrismaModule } from '../src/prisma/prisma.module';
 import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
-import { CredentialsModule } from '../src/credentials/credentials.module';
-import { CredentialsFactory } from './factories/credentials.factory';
+import { WifisModule } from '../src/wifis/wifis.module';
+import { WifisFactory } from './factories/wifis.factory';
 import { SignUpFactory } from './factories/sign-up.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-describe('Credentials (e2e)', () => {
+describe('Wifis (e2e)', () => {
   let app: INestApplication;
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
   const signUpFactory = new SignUpFactory(prisma, config);
-  const credentialsFactory = new CredentialsFactory(prisma, helper);
+  const wifisFactory = new WifisFactory(prisma, helper);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -25,7 +25,7 @@ describe('Credentials (e2e)', () => {
         AuthModule,
         UsersModule,
         PrismaModule,
-        CredentialsModule,
+        WifisModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -46,15 +46,15 @@ describe('Credentials (e2e)', () => {
     await app.init();
   });
 
-  describe('POST /credentials', () => {
-    it('should register a new credential', async () => {
+  describe('POST /wifis', () => {
+    it('should register a new wifi', async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const dto = credentialsFactory.generateDto();
+      const dto = wifisFactory.generateDto();
 
       const response = await request(app.getHttpServer())
-        .post('/credentials')
+        .post('/wifis')
         .send(dto)
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
@@ -69,20 +69,20 @@ describe('Credentials (e2e)', () => {
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const dto = credentialsFactory.generateDto();
+      const dto = wifisFactory.generateDto();
 
       return request(app.getHttpServer())
-        .post('/credentials')
+        .post('/wifis')
         .send(dto)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const dto = credentialsFactory.generateDto();
+      const dto = wifisFactory.generateDto();
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .post('/credentials')
+        .post('/wifis')
         .send(dto)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
@@ -93,51 +93,34 @@ describe('Credentials (e2e)', () => {
       const { token } = await signUpFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
-        .post('/credentials')
+        .post('/wifis')
         .send({})
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.BAD_REQUEST);
     });
-
-    it('should return conflict when credential title is already registered', async () => {
-      const user = await signUpFactory.createSignup();
-      const { email, id: userId } = user;
-      const { token } = await signUpFactory.generateToken(email, userId);
-
-      const { deployed } = await credentialsFactory.registerCredential(user);
-
-      const dto = credentialsFactory.generateDto();
-
-      return request(app.getHttpServer())
-        .post('/credentials')
-        .set('Authorization', `bearer ${token}`)
-        .send({ ...dto, title: deployed.title })
-        .expect(HttpStatus.CONFLICT);
-    });
   });
 
-  describe('GET /credentials', () => {
-    it("should return all user's credentials", async () => {
+  describe('GET /wifis', () => {
+    it("should return all user's wifis", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
-      const numberOfCredentials = 5;
-      for (let i = 0; i < numberOfCredentials; i++) {
-        await credentialsFactory.registerCredential(user);
+      const numberOfWifis = 5;
+      for (let i = 0; i < numberOfWifis; i++) {
+        await wifisFactory.registerWifi(user);
       }
 
-      const credentials = await request(app.getHttpServer())
-        .get('/credentials')
+      const wifis = await request(app.getHttpServer())
+        .get('/wifis')
         .set('Authorization', `bearer ${token}`);
 
-      expect(credentials.statusCode).toBe(HttpStatus.OK);
-      expect(credentials.body).toHaveLength(numberOfCredentials);
-      expect(credentials.body[0]).toEqual({
+      expect(wifis.statusCode).toBe(HttpStatus.OK);
+      expect(wifis.body).toHaveLength(numberOfWifis);
+      expect(wifis.body[0]).toEqual({
         id: expect.any(Number),
         title: expect.any(String),
         password: expect.any(String),
-        url: expect.any(String),
-        username: expect.any(String),
+        name: expect.any(String),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
         userId,
@@ -149,15 +132,14 @@ describe('Credentials (e2e)', () => {
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { body, deployed } =
-        await credentialsFactory.registerCredential(user);
+      const { body, deployed } = await wifisFactory.registerWifi(user);
 
-      const credentials = await request(app.getHttpServer())
-        .get('/credentials')
+      const wifis = await request(app.getHttpServer())
+        .get('/wifis')
         .set('Authorization', `bearer ${token}`);
 
-      expect(credentials.statusCode).toBe(HttpStatus.OK);
-      expect(credentials.body[0]).toEqual({
+      expect(wifis.statusCode).toBe(HttpStatus.OK);
+      expect(wifis.body[0]).toEqual({
         ...deployed,
         password: body.password,
         createdAt: expect.any(String),
@@ -167,34 +149,33 @@ describe('Credentials (e2e)', () => {
 
     it('should return unauthorized when token is missing', async () => {
       return request(app.getHttpServer())
-        .get('/credentials')
+        .get('/wifis')
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const { token } = signUpFactory.genFaketoken();
       return request(app.getHttpServer())
-        .get('/credentials')
+        .get('/wifis')
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
-  describe('GET /credentials/:id', () => {
-    it("should return specific user's credential with decrypted params", async () => {
+  describe('GET /wifis/:id', () => {
+    it("should return specific user's wifi with decrypted params", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed, body } =
-        await credentialsFactory.registerCredential(user);
+      const { deployed, body } = await wifisFactory.registerWifi(user);
 
-      const credential = await request(app.getHttpServer())
-        .get(`/credentials/${deployed.id}`)
+      const wifi = await request(app.getHttpServer())
+        .get(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.OK);
-      expect(credential.body).toEqual({
+      expect(wifi.statusCode).toBe(HttpStatus.OK);
+      expect(wifi.body).toEqual({
         ...deployed,
         password: body.password,
         createdAt: expect.any(String),
@@ -205,21 +186,21 @@ describe('Credentials (e2e)', () => {
     it('should return unauthorized when token is missing', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
       return request(app.getHttpServer())
-        .get(`/credentials/${deployed.id}`)
+        .get(`/wifis/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .get(`/credentials/${deployed.id}`)
+        .get(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -228,72 +209,72 @@ describe('Credentials (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .get(`/credentials/A`)
+      const wifi = await request(app.getHttpServer())
+        .get(`/wifis/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(wifi.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return forbidden when credential's id isn't from user", async () => {
+    it("should return forbidden when wifi's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .get(`/credentials/${deployed.id}`)
+      const wifi = await request(app.getHttpServer())
+        .get(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(wifi.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when credential's id doesn't exist", async () => {
+    it("should return not found when wifi's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .get(`/credentials/1`)
+      const wifi = await request(app.getHttpServer())
+        .get(`/wifis/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(wifi.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 
-  describe('DELETE /credentials/:id', () => {
-    it("should delete user's specific credential", async () => {
+  describe('DELETE /wifis/:id', () => {
+    it("should delete user's specific wifi", async () => {
       const user = await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
-      const credential = await request(app.getHttpServer())
-        .delete(`/credentials/${deployed.id}`)
+      const wifi = await request(app.getHttpServer())
+        .delete(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.NO_CONTENT);
+      expect(wifi.statusCode).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('should return unauthorized when token is missing', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
       return request(app.getHttpServer())
-        .delete(`/credentials/${deployed.id}`)
+        .delete(`/wifis/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const user = await signUpFactory.createSignup();
 
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
       const { token } = signUpFactory.genFaketoken();
       return request(app.getHttpServer())
-        .delete(`/credentials/${deployed.id}`)
+        .delete(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -302,36 +283,36 @@ describe('Credentials (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .delete(`/credentials/A`)
+      const wifi = await request(app.getHttpServer())
+        .delete(`/wifis/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(wifi.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return forbidden when credential's id isn't from user", async () => {
+    it("should return forbidden when wifi's id isn't from user", async () => {
       const user = await signUpFactory.createSignup();
-      const { deployed } = await credentialsFactory.registerCredential(user);
+      const { deployed } = await wifisFactory.registerWifi(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .delete(`/credentials/${deployed.id}`)
+      const wifi = await request(app.getHttpServer())
+        .delete(`/wifis/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(wifi.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when credential's id doesn't exist", async () => {
+    it("should return not found when wifi's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const credential = await request(app.getHttpServer())
-        .delete(`/credentials/1`)
+      const wifi = await request(app.getHttpServer())
+        .delete(`/wifis/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(credential.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(wifi.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 });
