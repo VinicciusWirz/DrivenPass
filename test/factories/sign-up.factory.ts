@@ -50,4 +50,8 @@ export class SignUpFactory {
     );
     return { token };
   }
+
+  genFaketoken() {
+    return { token: faker.lorem.slug({ min: 3, max: 6 }) };
+  }
 }

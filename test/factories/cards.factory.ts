@@ -14,7 +14,7 @@ export class CardsFactory {
   }
 
   generateDto() {
-    const fakeMonth = faker.number.int({ min: 0, max: 12 });
+    const fakeMonth = faker.number.int({ min: 1, max: 12 });
     const fakeYear = faker.number.int({ min: 0, max: 99 });
     const typeOpt = [CardType.BOTH, CardType.CREDIT, CardType.DEBIT];
     const randomIndex = Math.floor(Math.random() * typeOpt.length);

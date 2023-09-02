@@ -6,18 +6,18 @@ import { AuthModule } from '../src/auth/auth.module';
 import { PrismaModule } from '../src/prisma/prisma.module';
 import { UsersModule } from '../src/users/users.module';
 import { Helper } from './helpers/helper';
-import { CardsModule } from '../src/cards/cards.module';
-import { CardsFactory } from './factories/cards.factory';
+import { CredentialsModule } from '../src/credentials/credentials.module';
+import { CredentialsFactory } from './factories/credentials.factory';
 import { SignUpFactory } from './factories/sign-up.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-describe('Cards (e2e)', () => {
+describe('Credentials (e2e)', () => {
   let app: INestApplication;
   const config = new ConfigService();
   const prisma = new PrismaService();
   const helper = new Helper(prisma, config);
   const signUpFactory = new SignUpFactory(prisma, config);
-  const cardsFactory = new CardsFactory(prisma, helper);
+  const credentialsFactory = new CredentialsFactory(prisma, helper);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -25,7 +25,7 @@ describe('Cards (e2e)', () => {
         AuthModule,
         UsersModule,
         PrismaModule,
-        CardsModule,
+        CredentialsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -46,15 +46,15 @@ describe('Cards (e2e)', () => {
     await app.init();
   });
 
-  describe('POST /cards', () => {
-    it('should register a new card', async () => {
+  describe('POST /credentials', () => {
+    it('should register a new credential', async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const dto = cardsFactory.generateDto();
+      const dto = credentialsFactory.generateDto();
 
       const response = await request(app.getHttpServer())
-        .post('/cards')
+        .post('/credentials')
         .send(dto)
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
@@ -63,29 +63,28 @@ describe('Cards (e2e)', () => {
         id: expect.any(Number),
         userId,
         password: expect.any(String),
-        cvv: expect.any(String),
         updatedAt: expect.any(String),
         createdAt: expect.any(String),
       });
     });
 
     it('should return unauthorized when token is missing', async () => {
-      const dto = cardsFactory.generateDto();
+      const dto = credentialsFactory.generateDto();
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/credentials')
         .send(dto)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
-      const dto = cardsFactory.generateDto();
+      const dto = credentialsFactory.generateDto();
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .post('/cards')
-        .set('Authorization', `bearer ${token}`)
+        .post('/credentials')
         .send(dto)
+        .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
@@ -94,57 +93,53 @@ describe('Cards (e2e)', () => {
       const { token } = await signUpFactory.generateToken(email, userId);
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/credentials')
         .send({})
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.BAD_REQUEST);
     });
 
-    it('should return conflict when card title is already registered', async () => {
+    it('should return conflict when credential title is already registered', async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
-      const dto = cardsFactory.generateDto();
+      const dto = credentialsFactory.generateDto();
 
       return request(app.getHttpServer())
-        .post('/cards')
+        .post('/credentials')
         .set('Authorization', `bearer ${token}`)
         .send({ ...dto, title: deployed.title })
         .expect(HttpStatus.CONFLICT);
     });
   });
 
-  describe('GET /cards', () => {
-    it("should return all user's cards", async () => {
+  describe('GET /credentials', () => {
+    it("should return all user's credentials", async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
-      const numberOfCards = 5;
-      for (let i = 0; i < numberOfCards; i++) {
-        await cardsFactory.registerCard(user);
+      const numberOfCredentials = 5;
+      for (let i = 0; i < numberOfCredentials; i++) {
+        await credentialsFactory.registerCredential(user);
       }
 
-      const cards = await request(app.getHttpServer())
-        .get('/cards')
+      const credentials = await request(app.getHttpServer())
+        .get('/credentials')
         .set('Authorization', `bearer ${token}`);
 
-      expect(cards.statusCode).toBe(HttpStatus.OK);
-      expect(cards.body).toHaveLength(numberOfCards);
-      expect(cards.body[0]).toEqual({
+      expect(credentials.statusCode).toBe(HttpStatus.OK);
+      expect(credentials.body).toHaveLength(numberOfCredentials);
+      expect(credentials.body[0]).toEqual({
         id: expect.any(Number),
-        cvv: expect.any(String),
-        expiration: expect.any(String),
-        name: expect.any(String),
-        number: expect.any(String),
-        password: expect.any(String),
         title: expect.any(String),
-        type: expect.any(String),
-        virtual: expect.any(Boolean),
+        password: expect.any(String),
+        url: expect.any(String),
+        username: expect.any(String),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
         userId,
@@ -157,17 +152,17 @@ describe('Cards (e2e)', () => {
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { body, deployed } = await cardsFactory.registerCard(user);
+      const { body, deployed } =
+        await credentialsFactory.registerCredential(user);
 
-      const cards = await request(app.getHttpServer())
-        .get('/cards')
+      const credentials = await request(app.getHttpServer())
+        .get('/credentials')
         .set('Authorization', `bearer ${token}`);
 
-      expect(cards.statusCode).toBe(HttpStatus.OK);
-      expect(cards.body[0]).toEqual({
+      expect(credentials.statusCode).toBe(HttpStatus.OK);
+      expect(credentials.body[0]).toEqual({
         ...deployed,
         password: body.password,
-        cvv: body.cvv,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
@@ -175,39 +170,37 @@ describe('Cards (e2e)', () => {
 
     it('should return unauthorized when token is missing', async () => {
       return request(app.getHttpServer())
-        .get('/cards')
-
+        .get('/credentials')
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when token is not valid', async () => {
       const { token } = signUpFactory.genFaketoken();
-
       return request(app.getHttpServer())
-        .get('/cards')
+        .get('/credentials')
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
-  describe('GET /cards/:id', () => {
-    it("should return specific user's card with decrypted params", async () => {
+  describe('GET /credentials/:id', () => {
+    it("should return specific user's credential with decrypted params", async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed, body } = await cardsFactory.registerCard(user);
+      const { deployed, body } =
+        await credentialsFactory.registerCredential(user);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+      const credential = await request(app.getHttpServer())
+        .get(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.OK);
-      expect(card.body).toEqual({
+      expect(credential.statusCode).toBe(HttpStatus.OK);
+      expect(credential.body).toEqual({
         ...deployed,
         password: body.password,
-        cvv: body.cvv,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
@@ -217,10 +210,10 @@ describe('Cards (e2e)', () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
       return request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+        .get(`/credentials/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
@@ -228,12 +221,11 @@ describe('Cards (e2e)', () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
-
+      const { deployed } = await credentialsFactory.registerCredential(user);
       const { token } = signUpFactory.genFaketoken();
 
       return request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+        .get(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -242,64 +234,64 @@ describe('Cards (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/A`)
+      const credential = await request(app.getHttpServer())
+        .get(`/credentials/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(credential.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return foribdden when credential's id isn't from user", async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/${deployed.id}`)
+      const credential = await request(app.getHttpServer())
+        .get(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(credential.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when card's id doesn't exist", async () => {
+    it("should return not found when credential's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .get(`/cards/1`)
+      const credential = await request(app.getHttpServer())
+        .get(`/credentials/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(credential.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 
-  describe('DELETE /cards/:id', () => {
-    it("should delete user's specific card", async () => {
+  describe('DELETE /credentials/:id', () => {
+    it("should delete user's specific credential", async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
       const { email, id: userId } = user;
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+      const credential = await request(app.getHttpServer())
+        .delete(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NO_CONTENT);
+      expect(credential.statusCode).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('should return unauthorized when token is missing', async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
       return request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+        .delete(`/credentials/${deployed.id}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
@@ -307,12 +299,11 @@ describe('Cards (e2e)', () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
 
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
       const { token } = signUpFactory.genFaketoken();
-
       return request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+        .delete(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -321,37 +312,37 @@ describe('Cards (e2e)', () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/A`)
+      const credential = await request(app.getHttpServer())
+        .delete(`/credentials/A`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(credential.statusCode).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it("should return foribdden when card's id isn't from user", async () => {
+    it("should return foribdden when credential's id isn't from user", async () => {
       const { nonCryptedPassword, ...user } =
         await signUpFactory.createSignup();
-      const { deployed } = await cardsFactory.registerCard(user);
+      const { deployed } = await credentialsFactory.registerCredential(user);
 
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/${deployed.id}`)
+      const credential = await request(app.getHttpServer())
+        .delete(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(credential.statusCode).toBe(HttpStatus.FORBIDDEN);
     });
 
-    it("should return not found when card's id doesn't exist", async () => {
+    it("should return not found when credential's id doesn't exist", async () => {
       const { email, id: userId } = await signUpFactory.createSignup();
       const { token } = await signUpFactory.generateToken(email, userId);
 
-      const card = await request(app.getHttpServer())
-        .delete(`/cards/1`)
+      const credential = await request(app.getHttpServer())
+        .delete(`/credentials/1`)
         .set('Authorization', `bearer ${token}`);
 
-      expect(card.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(credential.statusCode).toBe(HttpStatus.NOT_FOUND);
     });
   });
 });
