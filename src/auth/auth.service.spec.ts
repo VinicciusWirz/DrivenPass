@@ -7,21 +7,31 @@ import { UsersRepository } from '../users/users.repository';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signUpDto';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JsonWebTokenError } from 'jsonwebtoken';
+import { SignInDto } from './dto/signInDto';
 
 describe('AuthService', () => {
   let service: AuthService;
   const prisma = new PrismaService();
   let repository: UsersRepository;
-  const dto = new SignUpDto();
-  const SALT = process.env.SALT;
+  let dto = new SignUpDto();
+  let login = new SignInDto();
+  const config = new ConfigService();
+  const SALT = parseInt(config.get<string>('SALT'));
 
   dto.email = 'email@email.com';
   dto.password = 'Str0nG!P4szwuRd';
+  login = { ...dto };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule.register({})],
+      imports: [
+        JwtModule.register({}),
+        ConfigModule.forRoot({
+          isGlobal: true,
+        }),
+      ],
       providers: [
         AuthService,
         PrismaService,
@@ -65,13 +75,13 @@ describe('AuthService', () => {
     it('should return sucessfull message', async () => {
       jest.spyOn(repository, 'findOneByEmail').mockResolvedValueOnce({
         id: 1,
-        email: dto.email,
-        password: bcrypt.hashSync(dto.password, SALT),
+        email: login.email,
+        password: bcrypt.hashSync(login.password, SALT),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      expect(await service.signIn(dto)).toEqual({
+      expect(await service.signIn(login)).toEqual({
         token: expect.any(String),
       });
     });
@@ -79,7 +89,7 @@ describe('AuthService', () => {
     it("should return throw Unauthorized error if user doesn't exist", () => {
       jest.spyOn(repository, 'findOneByEmail').mockResolvedValueOnce(null);
 
-      expect(service.signIn(dto)).rejects.toThrow(
+      expect(service.signIn(login)).rejects.toThrow(
         new UnauthorizedException(`Email or password not valid.`),
       );
     });
@@ -87,15 +97,59 @@ describe('AuthService', () => {
     it("should return throw Unauthorized error if password doesn't match", () => {
       jest.spyOn(repository, 'findOneByEmail').mockResolvedValueOnce({
         id: 1,
-        email: dto.email,
+        email: login.email,
+        password: '123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      expect(service.signIn(login)).rejects.toThrow(
+        new UnauthorizedException(`Email or password not valid.`),
+      );
+    });
+
+    it("should return throw Unauthorized error if password doesn't match", () => {
+      jest.spyOn(repository, 'findOneByEmail').mockResolvedValueOnce({
+        id: 1,
+        email: login.email,
         password: bcrypt.hashSync('123', SALT),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      expect(service.signIn(dto)).rejects.toThrow(
+      expect(service.signIn(login)).rejects.toThrow(
         new UnauthorizedException(`Email or password not valid.`),
       );
+    });
+  });
+
+  describe('Check verified token', () => {
+    it('should decrypt a valid token', async () => {
+      const userId = 1;
+      jest.spyOn(repository, 'findOneByEmail').mockResolvedValueOnce({
+        id: userId,
+        email: login.email,
+        password: bcrypt.hashSync(login.password, SALT),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const { token } = await service.signIn(login);
+      const { email, sub, iss, aud } = service.checkToken(token);
+      expect(email).toEqual(login.email);
+      expect(aud).toEqual('users');
+      expect(iss).toEqual('Driven');
+      expect(sub).toEqual(userId.toString());
+    });
+
+    it('should throw jwt error if token is not valid', async () => {
+      try {
+        await service.checkToken('not.valid.token');
+
+        fail('Expected an error to be thrown');
+      } catch (error) {
+        expect(error).toEqual(new JsonWebTokenError('invalid token'));
+      }
     });
   });
 });
