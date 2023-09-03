@@ -48,11 +48,11 @@ export class NotesService {
   async remove(id: number, user: User) {
     await this.findOne(id, user);
     await this.repository.remove(id, user);
-    return;
+    return true;
   }
 
   private async findWithTitle(body: CreateNoteDto, userId: number) {
-    const credential = await this.repository.findWithTitle(body, userId);
-    if (credential) throw new ConflictException('Title already registered');
+    const note = await this.repository.findWithTitle(body, userId);
+    if (note) throw new ConflictException('Title already registered');
   }
 }
