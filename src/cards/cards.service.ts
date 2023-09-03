@@ -64,7 +64,7 @@ export class CardsService {
   async remove(id: number, user: User) {
     await this.findOne(id, user);
     await this.repository.remove(id, user);
-    return;
+    return true;
   }
 
   private async findWithTitle(body: CreateCardDto, userId: number) {
