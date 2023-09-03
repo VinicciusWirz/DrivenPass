@@ -16,7 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:all:cov": "npm run test:load-envs -- jest -- --runInBand --coverage --config ./jest-e2e.json",
+    "test:all:cov": "npm run test:load-envs -- jest -- --runInBand --coverage --config ./jest-cover.json",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:load-envs": "dotenv -e .env.test",
     "test:e2e": "npm run test:load-envs -- jest -- --runInBand --config ./test/jest-e2e.json",

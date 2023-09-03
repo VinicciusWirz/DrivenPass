@@ -27,10 +27,6 @@ export class Helper {
     return this.cryptr.encrypt(data);
   }
 
-  decryptData(data: string) {
-    return this.cryptr.decrypt(data);
-  }
-
   formatExpDate(month: number, year: number) {
     const monthFormat = month < 10 ? `0${month}` : `${month}`;
     const yearFormat = year < 10 ? `0${year}` : `${year}`;
