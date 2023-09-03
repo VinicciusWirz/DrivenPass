@@ -2,7 +2,7 @@ import * as bcrypt from 'bcrypt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { SignUpDto } from '../auth/dto/signUpDto';
-import { UserVerificationDto } from './dto/user-verification.dto';
+import { PasswordConfirmationDto } from './dto/password-confirmation.dto';
 import { UsersRepository } from './users.repository';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class UsersService {
     return await this.usersRepository.getById(id);
   }
 
-  async delete(body: UserVerificationDto, user: User) {
+  async delete(body: PasswordConfirmationDto, user: User) {
     const { password } = body;
     const confirmation = await bcrypt.compare(password, user.password);
     if (!confirmation) {

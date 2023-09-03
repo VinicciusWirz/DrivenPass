@@ -18,7 +18,7 @@ import { UsersService } from './users.service';
 import { User as UserPrisma } from '@prisma/client';
 import { User } from '../decorators/user.decorator';
 import { AuthGuard } from '../guards/auth.guard';
-import { UserVerificationDto } from './dto/user-verification.dto';
+import { PasswordConfirmationDto } from './dto/password-confirmation.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -29,13 +29,13 @@ export class UsersController {
 
   @Post('erase')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBody({ type: UserVerificationDto })
+  @ApiBody({ type: PasswordConfirmationDto })
   @ApiOperation({ summary: "Delete all user's information" })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Password confirmation failed',
   })
-  delete(@Body() body: UserVerificationDto, @User() user: UserPrisma) {
+  delete(@Body() body: PasswordConfirmationDto, @User() user: UserPrisma) {
     return this.usersService.delete(body, user);
   }
 

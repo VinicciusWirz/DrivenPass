@@ -20,7 +20,8 @@ export class SignUpDto {
   })
   @ApiProperty({
     example: 'Str0nG!P4szwuRd',
-    description: 'Valid password',
+    description: `Valid password must be 10 characters long, 
+    contain 1 number, 1 lowercase, 1 uppercase and 1 symbol`,
   })
   password: string;
 }
