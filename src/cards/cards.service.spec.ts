@@ -25,7 +25,6 @@ describe('CardsService', () => {
   dto.type = CardType.BOTH;
   dto.virtual = true;
 
-  const SALT = process.env.SALT;
   const mockUser: User = {
     id: 1,
     createdAt: new Date(),
