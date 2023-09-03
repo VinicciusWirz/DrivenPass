@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateWifiDto } from './dto/create-wifi.dto';
 import { WifisRepository } from './wifis.repository';
 import { WifisService } from './wifis.service';
@@ -11,6 +12,7 @@ describe('WifisService', () => {
   let service: WifisService;
   let repository: WifisRepository;
   const prisma = new PrismaService();
+  const prismaUtils = new PrismaUtils();
   const dto = new CreateWifiDto();
   dto.title = 'mock-title';
   dto.name = 'mock-name';
@@ -31,7 +33,7 @@ describe('WifisService', () => {
           isGlobal: true,
         }),
       ],
-      providers: [WifisService, WifisRepository, PrismaService],
+      providers: [WifisService, WifisRepository, PrismaService, PrismaUtils],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -52,24 +54,15 @@ describe('WifisService', () => {
       };
       jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
       const create = await service.create(dto, mockUser);
-      expect(create).toEqual({
-        ...mockCreated,
-        password: expect.any(String),
-      });
-    });
-
-    it('should encrypt sensitive data', async () => {
-      const mockCreated = {
-        ...dto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        id: 1,
-        userId: 1,
-      };
-      jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
-
-      const create = await service.create(dto, mockUser);
-      expect(create.password).not.toEqual(dto.password);
+      expect(create).toEqual(
+        prismaUtils.exclude(
+          mockCreated,
+          'userId',
+          'createdAt',
+          'updatedAt',
+          'password',
+        ),
+      );
     });
   });
 
@@ -89,7 +82,7 @@ describe('WifisService', () => {
       const findAll = await service.findAll(mockUser);
       expect(findAll).toHaveLength(2);
       expect(findAll[0]).toEqual({
-        ...mockWifi,
+        ...prismaUtils.exclude(mockWifi, 'userId', 'createdAt', 'updatedAt'),
         password: expect.any(String),
       });
     });
@@ -125,7 +118,7 @@ describe('WifisService', () => {
 
       const findOne = await service.findOne(1, mockUser);
       expect(findOne).toEqual({
-        ...mockWifi,
+        ...prismaUtils.exclude(mockWifi, 'userId', 'createdAt', 'updatedAt'),
         password: expect.any(String),
       });
     });

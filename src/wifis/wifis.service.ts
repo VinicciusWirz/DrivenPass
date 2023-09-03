@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
 import Cryptr from 'cryptr';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateWifiDto } from './dto/create-wifi.dto';
 import { WifisRepository } from './wifis.repository';
 
@@ -16,6 +17,7 @@ export class WifisService {
   constructor(
     private readonly repository: WifisRepository,
     private readonly config: ConfigService,
+    private readonly prismaUtils: PrismaUtils,
   ) {
     const Cryptr = require('cryptr');
     this.cryptr = new Cryptr(this.config.get<string>('CRYPTR_SECRET'), {
@@ -27,13 +29,23 @@ export class WifisService {
   async create(body: CreateWifiDto, user: User) {
     body.password = this.cryptr.encrypt(body.password);
 
-    return await this.repository.create(body, user);
+    const wifi = await this.repository.create(body, user);
+    return this.prismaUtils.exclude(
+      wifi,
+      'createdAt',
+      'updatedAt',
+      'password',
+      'userId',
+    );
   }
 
   async findAll(user: User) {
     const wifis = await this.repository.findAllFromUser(user);
     return wifis.map(({ password, ...wifi }) => {
-      return { ...wifi, password: this.cryptr.decrypt(password) };
+      return {
+        ...this.prismaUtils.exclude(wifi, 'createdAt', 'updatedAt', 'userId'),
+        password: this.cryptr.decrypt(password),
+      };
     });
   }
 
@@ -46,7 +58,7 @@ export class WifisService {
     }
 
     return {
-      ...wifi,
+      ...this.prismaUtils.exclude(wifi, 'createdAt', 'updatedAt', 'userId'),
       password: this.cryptr.decrypt(wifi.password),
     };
   }

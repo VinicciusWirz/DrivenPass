@@ -10,6 +10,7 @@ import { LicensesModule } from '../src/licenses/licenses.module';
 import { LicensesFactory } from './factories/licenses.factory';
 import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UtilsModule } from '../src/utils/utils.module';
 
 describe('Licenses (e2e)', () => {
   let app: INestApplication;
@@ -26,6 +27,7 @@ describe('Licenses (e2e)', () => {
         UsersModule,
         PrismaModule,
         LicensesModule,
+        UtilsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -61,9 +63,6 @@ describe('Licenses (e2e)', () => {
       expect(response.body).toEqual({
         ...dto,
         id: expect.any(Number),
-        userId,
-        updatedAt: expect.any(String),
-        createdAt: expect.any(String),
       });
     });
 
@@ -139,9 +138,6 @@ describe('Licenses (e2e)', () => {
         softwareName: expect.any(String),
         softwareVersion: expect.any(String),
         licenseKey: expect.any(String),
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        userId,
       });
     });
 
@@ -167,6 +163,7 @@ describe('Licenses (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await licensesFactory.registerLicense(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const license = await request(app.getHttpServer())
         .get(`/licenses/${deployed.id}`)
@@ -174,9 +171,7 @@ describe('Licenses (e2e)', () => {
 
       expect(license.statusCode).toBe(HttpStatus.OK);
       expect(license.body).toEqual({
-        ...deployed,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
+        ...resp,
       });
     });
 

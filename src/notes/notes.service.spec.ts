@@ -6,6 +6,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesRepository } from './notes.repository';
@@ -15,6 +16,7 @@ describe('NotesService', () => {
   let service: NotesService;
   let repository: NotesRepository;
   const prisma = new PrismaService();
+  const prismaUtils = new PrismaUtils();
   const dto = new CreateNoteDto();
   dto.title = 'mock-title';
   dto.text = 'mock-text';
@@ -29,7 +31,7 @@ describe('NotesService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [NotesService, NotesRepository, PrismaService],
+      providers: [NotesService, NotesRepository, PrismaService, PrismaUtils],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -51,7 +53,9 @@ describe('NotesService', () => {
       jest.spyOn(repository, 'findWithTitle').mockResolvedValueOnce(null);
       jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
       const create = await service.create(dto, mockUser);
-      expect(create).toEqual(mockCreated);
+      expect(create).toEqual(
+        prismaUtils.exclude(mockCreated, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should throw conflict error when title is already registered for user', () => {
@@ -85,7 +89,9 @@ describe('NotesService', () => {
 
       const findAll = await service.findAll(mockUser);
       expect(findAll).toHaveLength(2);
-      expect(findAll[0]).toEqual(mockNote);
+      expect(findAll[0]).toEqual(
+        prismaUtils.exclude(mockNote, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
   });
 
@@ -101,7 +107,9 @@ describe('NotesService', () => {
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(mockNote);
 
       const findOne = await service.findOne(1, mockUser);
-      expect(findOne).toEqual(mockNote);
+      expect(findOne).toEqual(
+        prismaUtils.exclude(mockNote, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should throw not found if note is not found', () => {
@@ -145,7 +153,9 @@ describe('NotesService', () => {
       jest.spyOn(repository, 'findWithTitle').mockResolvedValueOnce(null);
       jest.spyOn(repository, 'update').mockResolvedValueOnce(mockUpdate);
       const update = await service.update(1, updateDto, mockUser);
-      expect(update).toEqual(mockUpdate);
+      expect(update).toEqual(
+        prismaUtils.exclude(mockUpdate, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should return updated title note', async () => {
@@ -164,7 +174,9 @@ describe('NotesService', () => {
       jest.spyOn(repository, 'findWithTitle').mockResolvedValueOnce(null);
       jest.spyOn(repository, 'update').mockResolvedValueOnce(mockUpdate);
       const update = await service.update(1, updateDto, mockUser);
-      expect(update).toEqual(mockUpdate);
+      expect(update).toEqual(
+        prismaUtils.exclude(mockUpdate, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should return updated note', async () => {
@@ -184,7 +196,9 @@ describe('NotesService', () => {
       jest.spyOn(repository, 'findWithTitle').mockResolvedValueOnce(null);
       jest.spyOn(repository, 'update').mockResolvedValueOnce(mockUpdate);
       const update = await service.update(1, updateDto, mockUser);
-      expect(update).toEqual(mockUpdate);
+      expect(update).toEqual(
+        prismaUtils.exclude(mockUpdate, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should throw conflict error when title is already registered for user', () => {
@@ -210,13 +224,7 @@ describe('NotesService', () => {
     it('should throw not found if note is not found', () => {
       const updateDto = new UpdateNoteDto();
       updateDto.title = dto.title;
-      const mockNote = {
-        ...dto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        id: 1,
-        userId: 1,
-      };
+
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(null);
 
       expect(service.update(1, updateDto, mockUser)).rejects.toThrow(

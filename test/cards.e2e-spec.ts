@@ -10,6 +10,7 @@ import { CardsModule } from '../src/cards/cards.module';
 import { CardsFactory } from './factories/cards.factory';
 import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UtilsModule } from '../src/utils/utils.module';
 
 describe('Cards (e2e)', () => {
   let app: INestApplication;
@@ -26,6 +27,7 @@ describe('Cards (e2e)', () => {
         UsersModule,
         PrismaModule,
         CardsModule,
+        UtilsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -52,6 +54,7 @@ describe('Cards (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const dto = cardsFactory.generateDto();
+      const { cvv, password, ...rest } = dto;
 
       const response = await request(app.getHttpServer())
         .post('/cards')
@@ -59,13 +62,8 @@ describe('Cards (e2e)', () => {
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
       expect(response.body).toEqual({
-        ...dto,
+        ...rest,
         id: expect.any(Number),
-        userId,
-        password: expect.any(String),
-        cvv: expect.any(String),
-        updatedAt: expect.any(String),
-        createdAt: expect.any(String),
       });
     });
 
@@ -143,9 +141,6 @@ describe('Cards (e2e)', () => {
         title: expect.any(String),
         type: expect.any(String),
         virtual: expect.any(Boolean),
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        userId,
       });
     });
 
@@ -155,6 +150,7 @@ describe('Cards (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { body, deployed } = await cardsFactory.registerCard(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const cards = await request(app.getHttpServer())
         .get('/cards')
@@ -162,11 +158,9 @@ describe('Cards (e2e)', () => {
 
       expect(cards.statusCode).toBe(HttpStatus.OK);
       expect(cards.body[0]).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
         cvv: body.cvv,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 
@@ -194,6 +188,7 @@ describe('Cards (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed, body } = await cardsFactory.registerCard(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const card = await request(app.getHttpServer())
         .get(`/cards/${deployed.id}`)
@@ -201,11 +196,9 @@ describe('Cards (e2e)', () => {
 
       expect(card.statusCode).toBe(HttpStatus.OK);
       expect(card.body).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
         cvv: body.cvv,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 

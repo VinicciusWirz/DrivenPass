@@ -10,6 +10,7 @@ import { WifisModule } from '../src/wifis/wifis.module';
 import { WifisFactory } from './factories/wifis.factory';
 import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UtilsModule } from '../src/utils/utils.module';
 
 describe('Wifis (e2e)', () => {
   let app: INestApplication;
@@ -26,6 +27,7 @@ describe('Wifis (e2e)', () => {
         UsersModule,
         PrismaModule,
         WifisModule,
+        UtilsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -52,6 +54,7 @@ describe('Wifis (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const dto = wifisFactory.generateDto();
+      const { name, title } = dto;
 
       const response = await request(app.getHttpServer())
         .post('/wifis')
@@ -59,12 +62,9 @@ describe('Wifis (e2e)', () => {
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
       expect(response.body).toEqual({
-        ...dto,
         id: expect.any(Number),
-        userId,
-        password: expect.any(String),
-        updatedAt: expect.any(String),
-        createdAt: expect.any(String),
+        name,
+        title,
       });
     });
 
@@ -121,9 +121,6 @@ describe('Wifis (e2e)', () => {
         title: expect.any(String),
         password: expect.any(String),
         name: expect.any(String),
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        userId,
       });
     });
 
@@ -133,6 +130,7 @@ describe('Wifis (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { body, deployed } = await wifisFactory.registerWifi(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const wifis = await request(app.getHttpServer())
         .get('/wifis')
@@ -140,10 +138,8 @@ describe('Wifis (e2e)', () => {
 
       expect(wifis.statusCode).toBe(HttpStatus.OK);
       expect(wifis.body[0]).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 
@@ -169,6 +165,7 @@ describe('Wifis (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed, body } = await wifisFactory.registerWifi(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const wifi = await request(app.getHttpServer())
         .get(`/wifis/${deployed.id}`)
@@ -176,10 +173,8 @@ describe('Wifis (e2e)', () => {
 
       expect(wifi.statusCode).toBe(HttpStatus.OK);
       expect(wifi.body).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 

@@ -9,6 +9,7 @@ import { User } from '@prisma/client';
 import { CredentialsRepository } from './credentials.repository';
 import { CreateCredentialDto } from './dto/create-credential.dto';
 import { ConfigService } from '@nestjs/config';
+import { PrismaUtils } from '../utils/prisma.utils';
 
 @Injectable()
 export class CredentialsService {
@@ -17,6 +18,7 @@ export class CredentialsService {
   constructor(
     private readonly repository: CredentialsRepository,
     private readonly config: ConfigService,
+    private readonly prismaUtils: PrismaUtils,
   ) {
     const Cryptr = require('cryptr');
     this.cryptr = new Cryptr(this.config.get<string>('CRYPTR_SECRET'), {
@@ -28,14 +30,29 @@ export class CredentialsService {
   async create(body: CreateCredentialDto, user: User) {
     await this.findWithTitle(body, user.id);
     body.password = this.cryptr.encrypt(body.password);
-    return await this.repository.create(body, user);
+    const credential = await this.repository.create(body, user);
+    return this.prismaUtils.exclude(
+      credential,
+      'createdAt',
+      'updatedAt',
+      'password',
+      'userId',
+    );
   }
 
   async findAll(user: User) {
     const credentials = await this.repository.findAllFromUser(user);
 
     return credentials.map(({ password, ...credential }) => {
-      return { ...credential, password: this.cryptr.decrypt(password) };
+      return {
+        ...this.prismaUtils.exclude(
+          credential,
+          'createdAt',
+          'updatedAt',
+          'userId',
+        ),
+        password: this.cryptr.decrypt(password),
+      };
     });
   }
 
@@ -48,7 +65,12 @@ export class CredentialsService {
     }
 
     return {
-      ...credential,
+      ...this.prismaUtils.exclude(
+        credential,
+        'createdAt',
+        'updatedAt',
+        'userId',
+      ),
       password: this.cryptr.decrypt(credential.password),
     };
   }

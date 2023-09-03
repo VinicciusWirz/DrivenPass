@@ -5,21 +5,34 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { LicensesRepository } from './licenses.repository';
 
 @Injectable()
 export class LicensesService {
-  constructor(private readonly repository: LicensesRepository) {}
+  constructor(
+    private readonly repository: LicensesRepository,
+    private readonly prismaUtils: PrismaUtils,
+  ) {}
 
   async create(body: CreateLicenseDto, user: User) {
     await this.findConflict(body, user);
 
-    return await this.repository.create(body, user);
+    const license = await this.repository.create(body, user);
+    return this.prismaUtils.exclude(
+      license,
+      'createdAt',
+      'updatedAt',
+      'userId',
+    );
   }
 
   async findAll(user: User) {
-    return await this.repository.findAllFromUser(user);
+    const licenses = await this.repository.findAllFromUser(user);
+    return licenses.map((license) =>
+      this.prismaUtils.exclude(license, 'createdAt', 'updatedAt', 'userId'),
+    );
   }
 
   async findOne(id: number, user: User) {
@@ -32,7 +45,7 @@ export class LicensesService {
       throw new ForbiddenException("License register doesn't belong to user.");
     }
 
-    return license;
+    return this.prismaUtils.exclude(license, 'createdAt', 'updatedAt', 'userId');
   }
 
   async remove(id: number, user: User) {

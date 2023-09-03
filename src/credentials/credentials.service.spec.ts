@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CredentialsRepository } from './credentials.repository';
 import { CredentialsService } from './credentials.service';
 import { CreateCredentialDto } from './dto/create-credential.dto';
@@ -15,6 +16,7 @@ describe('CredentialsService', () => {
   let service: CredentialsService;
   let repository: CredentialsRepository;
   const prisma = new PrismaService();
+  const prismaUtils = new PrismaUtils();
   const dto = new CreateCredentialDto();
   dto.url = 'mock-url';
   dto.title = 'mock-title';
@@ -36,7 +38,12 @@ describe('CredentialsService', () => {
           isGlobal: true,
         }),
       ],
-      providers: [CredentialsService, CredentialsRepository, PrismaService],
+      providers: [
+        CredentialsService,
+        CredentialsRepository,
+        PrismaService,
+        PrismaUtils,
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -59,24 +66,14 @@ describe('CredentialsService', () => {
       jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
       const create = await service.create(dto, mockUser);
       expect(create).toEqual({
-        ...mockCreated,
-        password: expect.any(String),
+        ...prismaUtils.exclude(
+          mockCreated,
+          'userId',
+          'createdAt',
+          'updatedAt',
+          'password',
+        ),
       });
-    });
-
-    it('should encrypt sensitive data', async () => {
-      const mockCreated = {
-        ...dto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        id: 1,
-        userId: 1,
-      };
-      jest.spyOn(repository, 'findWithTitle').mockResolvedValueOnce(null);
-      jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
-
-      const create = await service.create(dto, mockUser);
-      expect(create.password).not.toEqual(dto.password);
     });
 
     it('should throw conflict error when title is already registered for user', () => {
@@ -113,7 +110,12 @@ describe('CredentialsService', () => {
       const findAll = await service.findAll(mockUser);
       expect(findAll).toHaveLength(2);
       expect(findAll[0]).toEqual({
-        ...mockCredential,
+        ...prismaUtils.exclude(
+          mockCredential,
+          'createdAt',
+          'updatedAt',
+          'userId',
+        ),
         password: expect.any(String),
       });
     });
@@ -149,7 +151,12 @@ describe('CredentialsService', () => {
 
       const findOne = await service.findOne(1, mockUser);
       expect(findOne).toEqual({
-        ...mockCredential,
+        ...prismaUtils.exclude(
+          mockCredential,
+          'createdAt',
+          'updatedAt',
+          'userId',
+        ),
         password: expect.any(String),
       });
     });

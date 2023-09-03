@@ -10,6 +10,7 @@ import { NotesModule } from '../src/notes/notes.module';
 import { NotesFactory } from './factories/notes.factory';
 import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UtilsModule } from '../src/utils/utils.module';
 
 describe('Notes (e2e)', () => {
   let app: INestApplication;
@@ -26,6 +27,7 @@ describe('Notes (e2e)', () => {
         UsersModule,
         PrismaModule,
         NotesModule,
+        UtilsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -61,9 +63,6 @@ describe('Notes (e2e)', () => {
       expect(response.body).toEqual({
         ...dto,
         id: expect.any(Number),
-        userId,
-        updatedAt: expect.any(String),
-        createdAt: expect.any(String),
       });
     });
 
@@ -135,9 +134,6 @@ describe('Notes (e2e)', () => {
         id: expect.any(Number),
         title: expect.any(String),
         text: expect.any(String),
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        userId,
       });
     });
 
@@ -163,6 +159,7 @@ describe('Notes (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const { deployed } = await notesFactory.registerNote(user);
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
 
       const note = await request(app.getHttpServer())
         .get(`/notes/${deployed.id}`)
@@ -170,9 +167,7 @@ describe('Notes (e2e)', () => {
 
       expect(note.statusCode).toBe(HttpStatus.OK);
       expect(note.body).toEqual({
-        ...deployed,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
+        ...resp,
       });
     });
 

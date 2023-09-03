@@ -10,6 +10,7 @@ import { CredentialsModule } from '../src/credentials/credentials.module';
 import { CredentialsFactory } from './factories/credentials.factory';
 import { AuthFactory } from './factories/auth.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UtilsModule } from '../src/utils/utils.module';
 
 describe('Credentials (e2e)', () => {
   let app: INestApplication;
@@ -26,6 +27,7 @@ describe('Credentials (e2e)', () => {
         UsersModule,
         PrismaModule,
         CredentialsModule,
+        UtilsModule,
         ConfigModule.forRoot({ isGlobal: true }),
       ],
     })
@@ -52,6 +54,7 @@ describe('Credentials (e2e)', () => {
       const { token } = await authFactory.generateToken(email, userId);
 
       const dto = credentialsFactory.generateDto();
+      const { title, url, username } = dto;
 
       const response = await request(app.getHttpServer())
         .post('/credentials')
@@ -59,12 +62,10 @@ describe('Credentials (e2e)', () => {
         .set('Authorization', `bearer ${token}`);
       expect(response.statusCode).toBe(HttpStatus.CREATED);
       expect(response.body).toEqual({
-        ...dto,
+        title,
+        url,
+        username,
         id: expect.any(Number),
-        userId,
-        password: expect.any(String),
-        updatedAt: expect.any(String),
-        createdAt: expect.any(String),
       });
     });
 
@@ -138,9 +139,6 @@ describe('Credentials (e2e)', () => {
         password: expect.any(String),
         url: expect.any(String),
         username: expect.any(String),
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        userId,
       });
     });
 
@@ -152,16 +150,16 @@ describe('Credentials (e2e)', () => {
       const { body, deployed } =
         await credentialsFactory.registerCredential(user);
 
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
+
       const credentials = await request(app.getHttpServer())
         .get('/credentials')
         .set('Authorization', `bearer ${token}`);
 
       expect(credentials.statusCode).toBe(HttpStatus.OK);
       expect(credentials.body[0]).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 
@@ -189,16 +187,16 @@ describe('Credentials (e2e)', () => {
       const { deployed, body } =
         await credentialsFactory.registerCredential(user);
 
+      const { userId: deployedUser, createdAt, updatedAt, ...resp } = deployed;
+
       const credential = await request(app.getHttpServer())
         .get(`/credentials/${deployed.id}`)
         .set('Authorization', `bearer ${token}`);
 
       expect(credential.statusCode).toBe(HttpStatus.OK);
       expect(credential.body).toEqual({
-        ...deployed,
+        ...resp,
         password: body.password,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
       });
     });
 

@@ -5,22 +5,30 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesRepository } from './notes.repository';
 
 @Injectable()
 export class NotesService {
-  constructor(private readonly repository: NotesRepository) {}
+  constructor(
+    private readonly repository: NotesRepository,
+    private readonly prismaUtils: PrismaUtils,
+  ) {}
 
   async create(body: CreateNoteDto, user: User) {
     const { id: userId } = user;
     await this.findWithTitle(body, userId);
-    return await this.repository.create(body, user);
+    const note = await this.repository.create(body, user);
+    return this.prismaUtils.exclude(note, 'createdAt', 'updatedAt', 'userId');
   }
 
-  findAll(user: User) {
-    return this.repository.findAllFromUser(user);
+  async findAll(user: User) {
+    const notes = await this.repository.findAllFromUser(user);
+    return notes.map((note) =>
+      this.prismaUtils.exclude(note, 'createdAt', 'updatedAt', 'userId'),
+    );
   }
 
   async findOne(id: number, user: User) {
@@ -31,7 +39,7 @@ export class NotesService {
       throw new ForbiddenException("Note doesn't belong to user.");
     }
 
-    return note;
+    return this.prismaUtils.exclude(note, 'createdAt', 'updatedAt', 'userId');
   }
 
   async update(id: number, body: UpdateNoteDto, user: User) {
@@ -42,7 +50,8 @@ export class NotesService {
       await this.findWithTitle(body as CreateNoteDto, userId);
     }
 
-    return await this.repository.update(id, body, user);
+    const updatedNote = await this.repository.update(id, body, user);
+    return this.prismaUtils.exclude(updatedNote, 'createdAt', 'updatedAt', 'userId')
   }
 
   async remove(id: number, user: User) {

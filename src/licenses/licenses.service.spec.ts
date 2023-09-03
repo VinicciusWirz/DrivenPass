@@ -6,6 +6,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { LicensesRepository } from './licenses.repository';
 import { LicensesService } from './licenses.service';
@@ -14,6 +15,7 @@ describe('LicensesService', () => {
   let service: LicensesService;
   let repository: LicensesRepository;
   const prisma = new PrismaService();
+  const prismaUtils = new PrismaUtils();
   const dto = new CreateLicenseDto();
   dto.licenseKey = '01234567891';
   dto.softwareName = 'mock-product';
@@ -29,7 +31,12 @@ describe('LicensesService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LicensesService, LicensesRepository, PrismaService],
+      providers: [
+        LicensesService,
+        LicensesRepository,
+        PrismaService,
+        PrismaUtils,
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -51,7 +58,9 @@ describe('LicensesService', () => {
       jest.spyOn(repository, 'findConflict').mockResolvedValueOnce(null);
       jest.spyOn(repository, 'create').mockResolvedValueOnce(mockCreated);
       const create = await service.create(dto, mockUser);
-      expect(create).toEqual(mockCreated);
+      expect(create).toEqual(
+        prismaUtils.exclude(mockCreated, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should throw conflict error when name, version and version is already registered for user', () => {
@@ -85,7 +94,9 @@ describe('LicensesService', () => {
 
       const findAll = await service.findAll(mockUser);
       expect(findAll).toHaveLength(2);
-      expect(findAll[0]).toEqual(mockLicense);
+      expect(findAll[0]).toEqual(
+        prismaUtils.exclude(mockLicense, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
   });
 
@@ -101,7 +112,9 @@ describe('LicensesService', () => {
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(mockLicense);
 
       const findOne = await service.findOne(1, mockUser);
-      expect(findOne).toEqual(mockLicense);
+      expect(findOne).toEqual(
+        prismaUtils.exclude(mockLicense, 'createdAt', 'updatedAt', 'userId'),
+      );
     });
 
     it('should throw not found if software license is not found', () => {

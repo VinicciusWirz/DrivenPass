@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
 import Cryptr from 'cryptr';
+import { PrismaUtils } from '../utils/prisma.utils';
 import { CardsRepository } from './cards.repository';
 import { CreateCardDto } from './dto/create-card.dto';
 
@@ -17,6 +18,7 @@ export class CardsService {
   constructor(
     private readonly repository: CardsRepository,
     private readonly config: ConfigService,
+    private readonly prismaUtils: PrismaUtils,
   ) {
     const Cryptr = require('cryptr');
     this.cryptr = new Cryptr(this.config.get<string>('CRYPTR_SECRET'), {
@@ -33,7 +35,15 @@ export class CardsService {
     body.password = this.cryptr.encrypt(password);
     body.cvv = this.cryptr.encrypt(cvv);
 
-    return await this.repository.create(body, user);
+    const card = await this.repository.create(body, user);
+    return this.prismaUtils.exclude(
+      card,
+      'createdAt',
+      'updatedAt',
+      'userId',
+      'password',
+      'cvv',
+    );
   }
 
   async findAll(user: User) {
@@ -41,7 +51,7 @@ export class CardsService {
 
     return cards.map(({ password, cvv, ...card }) => {
       return {
-        ...card,
+        ...this.prismaUtils.exclude(card, 'createdAt', 'updatedAt', 'userId'),
         password: this.cryptr.decrypt(password),
         cvv: this.cryptr.decrypt(cvv),
       };
@@ -58,7 +68,7 @@ export class CardsService {
 
     card.password = this.cryptr.decrypt(card.password);
     card.cvv = this.cryptr.decrypt(card.cvv);
-    return card;
+    return this.prismaUtils.exclude(card, 'createdAt', 'updatedAt', 'userId');
   }
 
   async remove(id: number, user: User) {
