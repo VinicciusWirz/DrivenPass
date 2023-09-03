@@ -11,6 +11,7 @@ import { WifisModule } from './wifis/wifis.module';
 import { LicensesModule } from './licenses/licenses.module';
 import { HealthModule } from './health/health.module';
 import { ConfigModule } from '@nestjs/config';
+import { UtilsModule } from './utils/utils.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    UtilsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
