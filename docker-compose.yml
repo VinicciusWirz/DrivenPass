@@ -5,7 +5,7 @@ services:
     ports:
       - 5433:5432
     networks:
-      - backend-container
+      - my-network
     env_file:
       - .env
     volumes:
@@ -16,15 +16,15 @@ services:
     ports:
       - 5000:3000
     networks:
-      - backend-container
+      - my-network
     env_file:
       - .env
     depends_on:
       - postgres
 
 networks:
-      backend-container:
-        name: backend-container
+      my-network:
+        name: my-network
         driver: bridge
 volumes:
   pg-drivenpass:
